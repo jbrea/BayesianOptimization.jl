@@ -5,16 +5,76 @@ branin(x1, x2; a = 1, b = 5.1/(4π^2), c = 5/π, r = 6, s = 10, t = 1/(8π),
 
 minima(::typeof(branin)) = [([-π, 12.275], 0.397887), ([π, 2.275], 0.397887), ([9.42478, 2.475], 0.397887)]
 
-using BayesianOptimization, GaussianProcesses
-opt = BOpt(x -> branin(x, noiselevel = 10), GPE(Array{Float64}(undef, 2, 0), Float64[],
-                                               MeanConst(-50.), 
-                                               Mat52Ard([1., 2.], 1.), 2.,
-                                               false, # true is more efficient and works with https://github.com/STOR-i/GaussianProcesses.jl/pull/93
-                                              ),
-           UpperConfidenceBound(), 
-#            GPOptimizer(every = 500, noise = false),
-           NoOptimizer(),
-           [-5., 0.], [10., 15.], maxiterations = 1000, sense = Min)
+function regret(opt, func)
+    mins = [m[1] for m in minima(func)]
+    (observed_regret = minimum(map(m -> euclidean(m, opt.optimizer), mins)),
+     model_regret = minimum(map(m -> euclidean(m, opt.model_optimizer), mins)))
+end
 
-res = BayesianOptimization.optimize!(opt)
-opt
+using BayesianOptimization, GaussianProcesses, Distances
+
+opt = BOpt(x -> branin(x, noiselevel = 0), 
+           ElasticGPE(2, mean = MeanConst(-10.), kernel = SEArd([3., 3.], 5.),
+                      logNoise = -2., capacity = 3000),
+           ExpectedImprovement(), 
+           GPOptimizer(every = 50, noise = false),
+#            NoOptimizer(),
+           [-5., 0.], [10., 15.], maxiterations = 100, 
+           sense = Min)
+@time BayesianOptimization.optimize!(opt)
+regret(opt, branin)
+
+all_obs_regs = []
+all_mod_regs = []
+for _ in 1:20
+    opt = BOpt(x -> branin(x, noiselevel = 20), 
+               ElasticGPE(2, mean = MeanConst(-50.), kernel = SEArd(rand(2), 4.),
+                          logNoise = 2., capacity = 3000),
+               UpperConfidenceBound(), 
+               GPOptimizer(every = 1000),
+               [-5., 0.], [10., 15.], maxiterations = 30, 
+               sense = Min, 
+               acquisitionoptions = Dict(:method => :LD_LBFGS, :maxeval => 1000))
+
+    obs_regs = []
+    mod_regs = []
+    for i in 1:99
+        res = BayesianOptimization.optimize!(opt);
+        obs_reg, mod_reg = regret(opt, branin)
+        push!(obs_regs, obs_reg)
+        push!(mod_regs, mod_reg)
+    end
+    push!(all_obs_regs, obs_regs)
+    push!(all_mod_regs, mod_regs)
+end
+
+using Statistics: mean
+using Plots
+p = plot(mean(all_obs_regs))
+plot!(p, mean(all_mod_regs))
+
+function test()
+    model = PlasticCachingModel
+    params_not_shared_by_birds = [:motivationrate]
+    share_params_across_exp = true
+    fp = FitParameters(model, share_params_across_exp = share_params_across_exp,
+                       params_not_shared_by_birds = params_not_shared_by_birds,
+                       experiments = Dict(:Cheke11_planning =>
+                                           EXPERIMENTS[:Cheke11_planning]))
+    bounds = map(k -> PlanningJays.SEARCHRANGE[k], fp.names)
+    func = x -> -modelscore(getmodelsfunc(fp, x), experiments =
+                            [:Cheke11_planning], Nsamples = 10)
+    func, [b[1] for b in bounds], [b[2] for b in bounds]
+end
+f, lowerbounds, upperbounds = test()
+opt = BOpt(f, 
+           ElasticGPE(19, mean = MeanConst(.05), kernel = SEArd((upperbounds - lowerbounds)/10, 2.),
+                      logNoise = -1., capacity = 3000),
+           ExpectedImprovement(), 
+           GPOptimizer(every = 10000),
+           lowerbounds, upperbounds, maxiterations = 1000, 
+           sense = Max, 
+           acquisitionoptions = Dict(:method => :LD_LBFGS, :maxeval => 1000))
+
+BayesianOptimization.optimize!(opt)
+
