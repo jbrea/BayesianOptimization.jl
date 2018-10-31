@@ -1,10 +1,23 @@
 abstract type AbstractAcquisition end
 
+setparams!(a, model) = nothing
+
+normal_pdf(μ, σ2) = 1/√(2π*σ2) * exp(-μ^2/(2*σ2))
+normal_cdf(μ, σ2) = 1/2 * (1 + erf(μ/√(2σ2)))
+
+"""
+The probability of improvement measures the probability that a point `x` leads 
+to an improvement upon an incumbent target `τ`. For Gaussian distributions it is 
+given by
+
+    Φ[(μ(x) - τ)/σ(x)]
+
+where `Φ` is the standard normal cumulative distribution function and `μ(x)`, `σ(x)`
+are mean and standard deviation of the distribution at point `x`.
+"""
 mutable struct ProbabilityOfImprovement <: AbstractAcquisition
     τ::Float64
 end
-normal_pdf(μ, σ2) = 1/√(2π*σ2) * exp(-μ^2/(2*σ2))
-normal_cdf(μ, σ2) = 1/2 * (1 + erf(μ/√(2σ2)))
 function acquisitionfunction(a::ProbabilityOfImprovement, model)
     x -> begin
         μ, σ2 = mean_var(model, x)
@@ -14,6 +27,16 @@ function acquisitionfunction(a::ProbabilityOfImprovement, model)
 end
 ProbabilityOfImprovement(; τ = -Inf) = ProbabilityOfImprovement(τ)
 
+"""
+The expected improvement measures the expected improvement `x - τ` of a point `x`
+upon an incumbent target `τ`. For Gaussian distributions it is given by
+
+    (μ(x) - τ) * ϕ[(μ(x) - τ)/σ(x)] + σ(x) * Φ[(μ(x) - τ)/σ(x)]
+    
+where `ϕ` is the standard normal distribution function and `Φ` is the standard
+normal cumulative function, and `μ(x)`, `σ(x)` are mean and standard deviation
+of the distribution at point `x`.
+"""
 mutable struct ExpectedImprovement <: AbstractAcquisition
     τ::Float64
 end
@@ -29,35 +52,99 @@ function acquisitionfunction(a::ExpectedImprovement, model)
     end
 end
 
-mutable struct UpperConfidenceBound <: AbstractAcquisition
-    ϵ::Float64
-    ηt::Float64
+abstract type BetaScaling end
+"""
+Scales `βt` of `UpperConfidenceBound` as
+
+    βt = √(2 * log(t^(D/2 + 2) * π^2/(3δ)))
+
+where `t` is the number of observations, `D` is the dimensionality of the input 
+data points and δ is a small constant (default δ = 0.1).
+
+See Brochu E., Cora V. M., de Freitas N. (2010), "A Tutorial on Bayesian
+Optimization of Expensive Cost Functions, with Application to Active User
+Modeling and Hierarchical Reinforcement Learning", https://arxiv.org/abs/1012.2599v1
+page 16.
+"""
+struct BrochuBetaScaling <: BetaScaling
+    δ::Float64
 end
-UpperConfidenceBound(; ϵ = .1, ηt = 1) = UpperConfidenceBound(ϵ, ηt)
-function setparams!(a::UpperConfidenceBound, model)
+"""
+Applies no scaling to `βt` of `UpperConfidenceBound`.
+"""
+struct NoBetaScaling <: BetaScaling end
+"""
+For Gaussian distributions the upper confidence bound at `x` is given by
+    μ(x) + βt * σ(x)
+
+where `βt` is a fixed parameter in the case of `NoBetaScaling` or an observation
+size dependent parameter in the case of e.g. `BrochuBetaScaling`.
+"""
+mutable struct UpperConfidenceBound{S} <: AbstractAcquisition
+    scaling::S
+    βt::Float64
+end
+"""
+    UpperConfidenceBound(; scaling = BrochuBetaScaling(.1), βt = 1)
+"""
+UpperConfidenceBound(; scaling = BrochuBetaScaling(.1), βt = 1.) = UpperConfidenceBound(scaling, βt)
+function setparams!(a::UpperConfidenceBound{BrochuBetaScaling}, model)
     D, nobs = dims(model)
     nobs == 0 && (nobs = 1)
-    a.ηt = sqrt(2*log(nobs^(D/2 + 2)*π^2/(3*a.ϵ)))
+    a.βt = sqrt(2*log(nobs^(D/2 + 2)*π^2/(3*a.scaling.δ)))
 end
 function acquisitionfunction(a::UpperConfidenceBound, model)
     x -> begin
         μ, σ2 = mean_var(model, x)
-        μ + a.ηt * √σ2
+        μ + a.βt * √σ2
     end
 end
 
-# TODO
-mutable struct EntropySearch <: AbstractAcquisition
-end
-
-# TODO
-mutable struct PredictiveEntropySearch <: AbstractAcquisition
-end
-
-setparams!(a, model) = nothing
+"""
+The acquisition function associated with `ThompsonSamplingSimple` draws
+independent samples for each input `x` a function value from the model. Together
+with a gradient-free optimization method this leads to proposal points that
+might be similarly distributed as the maxima of true Thompson samples from GPs. 
+True Thompson samples from a GP are simply functions from a GP. Maximizing these
+samples can be tricky, see e.g. http://hildobijl.com/Downloads/GPRT.pdf
+chapter 6.
+"""
+struct ThompsonSamplingSimple <: AbstractAcquisition end
+acquisitionfunction(a::ThompsonSamplingSimple, model) = x -> rand(model, reshape(x, :, 1))[1]
 
 struct MaxMean <: AbstractAcquisition end
 acquisitionfunction(a::MaxMean, model) = x -> mean_var(model, x)[1]
+
+# TODO see
+# https://github.com/HildoBijl/GPRT/blob/7166548b8587201fabc671a0647aac2ff96f3555/Chapter6/Chapter6.m#L723
+# and corresponding thesis page 173
+# mutable struct ThompsonSampling{K} <: AbstractAcquisition
+#     np::Int
+#     nc::Int
+#     nr::Int
+#     α::Float64
+#     kernel::K
+# end
+# 
+# function acquire_max(a::ThompsonSampling, model, lowerbounds, upperbounds; kwargs...)
+#     particles = [sample(lowerbounds, upperbounds) for _ in 1:a.np]
+#     weights = ones(a.np)
+#     for round in 1:a.nr
+#         round > 1 && resample!(particles, weigths)
+#         for i in 1:a.np
+# 
+#         end
+#     end
+# end
+#
+# TODO
+# mutable struct EntropySearch <: AbstractAcquisition
+# end
+
+# TODO
+# mutable struct PredictiveEntropySearch <: AbstractAcquisition
+# end
+
 
 function wrap_gradient(f)
     (x, g) -> begin
@@ -106,6 +193,7 @@ function acquire_max(opt, lowerbounds, upperbounds, restarts)
         x0 = sample(lowerbounds, upperbounds)
         f, x, ret = NLopt.optimize(opt, x0)
 #         println("$x0, $x, $f, $ret")
+        ret == NLopt.FORCED_STOP && throw(InterruptException())
         if f > maxf
             maxf = f
             maxx = x
@@ -114,17 +202,6 @@ function acquire_max(opt, lowerbounds, upperbounds, restarts)
     maxf, maxx
 end
 
-
-# TODO see
-# https://github.com/HildoBijl/GPRT/blob/7166548b8587201fabc671a0647aac2ff96f3555/Chapter6/Chapter6.m#L723
-# and corresponding thesis page 173
-mutable struct ThompsonSampling{K} <: AbstractAcquisition
-    np::Int64
-    nc::Int64
-    nr::Int64
-    α::Float64
-    kernel::K
-end
 
 # copied from https://github.com/robertfeldt/BlackBoxOptim.jl/blob/master/src/utilities/latin_hypercube_sampling.jl
 function latin_hypercube_sampling(mins::AbstractVector{T},
@@ -146,16 +223,4 @@ function latin_hypercube_sampling(mins::AbstractVector{T},
         result[i, :] .= Random.shuffle!(cubedim)
     end
     result
-end
-
-
-function acquire_max(a::ThompsonSampling, model, lowerbounds, upperbounds; kwargs...)
-    particles = [sample(lowerbounds, upperbounds) for _ in 1:a.np]
-    weights = ones(a.np)
-    for round in 1:a.nr
-        round > 1 && resample!(particles, weigths)
-        for i in 1:a.np
-
-        end
-    end
 end
