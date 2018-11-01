@@ -1,5 +1,5 @@
 module BayesianOptimization
-import MathProgBase, NLopt, GaussianProcesses
+import NLopt, GaussianProcesses
 import GaussianProcesses: GPBase, GPE
 import ElasticPDMats: ElasticPDMat
 import SpecialFunctions: erf
