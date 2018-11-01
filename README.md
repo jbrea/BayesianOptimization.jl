@@ -14,22 +14,25 @@
 ```julia
 using BayesianOptimization, GaussianProcesses
 
-f(x) = (x - 1).^2 + randn()                      # noisy function to minimize
+f(x) = sum((x .- 1).^2) + randn()                # noisy function to minimize
 
-model = ElasticGPE(2,                            # elastic GP with input dimensions 2
-                                                 # The GP is called elastic, because data can be appended efficiently
+# Choose as a model an elastic GP with input dimensions 2.
+# The GP is called elastic, because data can be appended efficiently.
+model = ElasticGPE(2,
                    mean = MeanConst(0.),         
                    kernel = SEArd([0., 0.], 5.),
                    logNoise = 0., 
                    capacity = 3000)              # the initial capacity of the GP is 3000 samples.
+
 # Optimize the hyperparameters of the GP using maximum likelihood (ML) estimates every 50 steps
-modeloptimizer = MLGPOptimizer(every = 50, noisebounds = [-4, 3],                                     kernbounds = [[-1, -1, 0], [4, 4, 10]],
-                               maxeval = 40),
+modeloptimizer = MLGPOptimizer(every = 50, noisebounds = [-4, 3],
+                               kernbounds = [[-1, -1, 0], [4, 4, 10]], 
+                               maxeval = 40)
 opt = BOpt(f, 
            model,
            ExpectedImprovement(),                 # type of acquisition
            modeloptimizer,                        
-           [-5., 0.], [10., 15.],                 # lowerbounds, upperbounds         
+           [-5., -5.], [5., 5.],                  # lowerbounds, upperbounds         
            maxiterations = 500, 
            sense = Min, 
            gradientfree = false,                  # use gradient information 
@@ -45,6 +48,7 @@ This package exports
 * GP hyperparameter optimizer: `MLGPOptimizer`, `NoOptimizer`
 * optimization sense: `Min`, `Max`
 * verbosity levels: `Silent`, `Timings`, `Progress`
+
 Use the REPL help, e.g. `?Bopt`, to get more information.
 
 ## Review papers on Bayesian optimization
