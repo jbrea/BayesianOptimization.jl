@@ -13,7 +13,8 @@ end
 function optimizemodel!(gp::GPBase; 
                         domean = true, kern = true, noise = true, lik = true,
                         meanbounds = nothing, kernbounds = nothing, 
-                        noisebounds = nothing, method = :LD_LBFGS, 
+                        noisebounds = nothing, likbounds = nothing, 
+                        method = :LD_LBFGS, 
                         maxeval = 500)
     params_kwargs = GP.get_params_kwargs(gp; domean=domean, kern=kern, 
                                          noise=noise, lik=lik)
@@ -23,8 +24,8 @@ function optimizemodel!(gp::GPBase;
             @. g = gp.dtarget
             gp.target
         end
-    lb, ub = GP.bounds(gp, noisebounds, meanbounds, kernbounds;
-                       domean = domean, kern = kern, noise = noise)
+    lb, ub = GP.bounds(gp, noisebounds, meanbounds, kernbounds, likbounds;
+                       domean = domean, kern = kern, noise = noise, lik = lik)
     opt = NLopt.Opt(method, length(lb))
     NLopt.lower_bounds!(opt, lb)
     NLopt.upper_bounds!(opt, ub)
