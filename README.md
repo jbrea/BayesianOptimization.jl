@@ -21,29 +21,29 @@ f(x) = sum((x .- 1).^2) + randn()                # noisy function to minimize
 model = ElasticGPE(2,
                    mean = MeanConst(0.),         
                    kernel = SEArd([0., 0.], 5.),
-                   logNoise = 0., 
+                   logNoise = 0.,
                    capacity = 3000)              # the initial capacity of the GP is 3000 samples.
 
 # Optimize the hyperparameters of the GP using maximum likelihood (ML) estimates every 50 steps
 modeloptimizer = MLGPOptimizer(every = 50, noisebounds = [-4, 3],
-                               kernbounds = [[-1, -1, 0], [4, 4, 10]], 
+                               kernbounds = [[-1, -1, 0], [4, 4, 10]],
                                maxeval = 40)
-opt = BOpt(f, 
+opt = BOpt(f,
            model,
            ExpectedImprovement(),                 # type of acquisition
            modeloptimizer,                        
            [-5., -5.], [5., 5.],                  # lowerbounds, upperbounds         
-           maxiterations = 500, 
-           sense = Min, 
-           gradientfree = false,                  # use gradient information 
+           maxiterations = 500,
+           sense = Min,
+           gradientfree = false,                  # use gradient information
            verbosity = Progress)
 
 result = boptimize!(opt)
 ```
 
-This package exports 
+This package exports
 * `BOpt`, `boptimize!`
-* acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`
+* acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`, `MutualInformation`
 * scaling of standard deviation in `UpperConfidenceBound`: `BrochuBetaScaling`, `NoBetaScaling`
 * GP hyperparameter optimizer: `MLGPOptimizer`, `NoOptimizer`
 * optimization sense: `Min`, `Max`
@@ -61,4 +61,3 @@ Use the REPL help, e.g. `?Bopt`, to get more information.
 [BayesOpt](https://github.com/jbrea/BayesOpt.jl) is a wrapper of the established
 [BayesOpt](https://github.com/rmcantin/bayesopt) toolbox written in C++. It has
 more features and seems comparable in performance to this package.
-

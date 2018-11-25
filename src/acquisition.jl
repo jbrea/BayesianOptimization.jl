@@ -157,7 +157,7 @@ where `μ(x)`, `σ(x)` are mean and standard deviation
 of the distribution at point `x`.
 
 See Contal E., Perchet V., Vayatis N. (2014), "Gaussian Process Optimization
-with Mutual Information"
+with Mutual Information" http://proceedings.mlr.press/v32/contal14.pdf
 """
 mutable struct MutualInformation <: AbstractAcquisition
     α::Float64
