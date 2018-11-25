@@ -4,9 +4,9 @@ import GaussianProcesses: GPBase, GPE
 import ElasticPDMats: ElasticPDMat
 import SpecialFunctions: erf
 using ForwardDiff, DiffResults, Random, Dates
-export BOpt, ExpectedImprovement, ProbabilityOfImprovement, UpperConfidenceBound, 
-ThompsonSamplingSimple, boptimize!, MLGPOptimizer, NoOptimizer, Min, Max,
-BrochuBetaScaling, NoBetaScaling, Silent, Timings, Progress
+export BOpt, ExpectedImprovement, ProbabilityOfImprovement, UpperConfidenceBound,
+ThompsonSamplingSimple, MutualInformation, boptimize!, MLGPOptimizer, NoOptimizer,
+Min, Max, BrochuBetaScaling, NoBetaScaling, Silent, Timings, Progress
 
 
 mutable struct IterationCounter
@@ -77,27 +77,27 @@ mutable struct BOpt{F,M,A,MO}
 end
 isdone(o::BOpt) = isdone(o.iterations) || isdone(o.duration)
 """
-    BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds; 
-              sense = Max, maxiterations = 10^4, maxduration = Inf, 
+    BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds;
+              sense = Max, maxiterations = 10^4, maxduration = Inf,
               acquisitionoptions = NamedTuple(), gradientfree = false,
               verbosity = Progress, lhs_iterations = 5*length(lowerbounds))
 """
-function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds; 
-              sense = Max, maxiterations = 10^4, maxduration = Inf, 
+function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds;
+              sense = Max, maxiterations = 10^4, maxduration = Inf,
               acquisitionoptions = NamedTuple(), gradientfree = false,
               verbosity = Progress, lhs_iterations = 5*length(lowerbounds))
     if gradientfree
         default_acquisitionoptions = (method = :GN_DIRECT_L, restarts = 1, maxeval = 500)
     else
-        default_acquisitionoptions = (method = :LD_LBFGS, restarts = 10, maxeval = 500) 
+        default_acquisitionoptions = (method = :LD_LBFGS, restarts = 10, maxeval = 500)
     end
     acquisitionoptions = merge(default_acquisitionoptions, acquisitionoptions)
     now = time()
     BOpt(func, sense, model, acquisition, acquisitionoptions,
          modeloptimizer, lowerbounds, upperbounds,
-         -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)), 
-         -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)), 
-         IterationCounter(0, 0, maxiterations), 
+         -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)),
+         -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)),
+         IterationCounter(0, 0, maxiterations),
          DurationCounter(now, maxduration, now, now + maxduration),
          NLopt.Opt(acquisitionoptions.method, length(lowerbounds)),
          verbosity, lhs_iterations)
@@ -124,7 +124,7 @@ sample(lowerbounds, upperbounds) =
     rand(length(lowerbounds)) .* (upperbounds .- lowerbounds) .+ lowerbounds
 
 function initialise_model!(o)
-    dac = @elapsed x = latin_hypercube_sampling(o.lowerbounds, o.upperbounds, 
+    dac = @elapsed x = latin_hypercube_sampling(o.lowerbounds, o.upperbounds,
                                                 o.lhs_iterations)
     dfunc = @elapsed y = Int(o.sense) .* o.func.([x[:, i] for i in 1:size(x, 2)])
     o.iterations.i = o.iterations.c = length(y)
@@ -145,7 +145,7 @@ function boptimize!(o::BOpt)
     while !isdone(o)
         o.verbosity >= Progress && @info("$(now())\titeration: $(o.iterations.i)\tcurrent optimum: $(o.observed_optimum)")
         setparams!(o.acquisition, o.model)
-        dac += @elapsed f, x = acquire_max(o.opt, o.lowerbounds, o.upperbounds, 
+        dac += @elapsed f, x = acquire_max(o.opt, o.lowerbounds, o.upperbounds,
                                            o.acquisitionoptions.restarts)
         dfunc += @elapsed y = Int(o.sense) * o.func(x)
         step!(o.iterations)
@@ -156,7 +156,7 @@ function boptimize!(o::BOpt)
         dmu += @elapsed update!(o.model, x, y)
         dom += @elapsed optimizemodel!(o.modeloptimizer, o.model)
     end
-    o.duration.now = time() 
+    o.duration.now = time()
     o.verbosity >= Timings && @info("time spent for:
         function evaluation \t $dfunc s
         model update \t\t $dmu s
