@@ -148,10 +148,10 @@ acquisitionfunction(a::MaxMean, model) = x -> mean_var(model, x)[1]
 """
 The mutual information measures the amount of information gained by querying at
 x. The parameter γ̂ gives a lower bound for the information on f from the queries
-{x}. For a Guassian this is
+{x}. For a Gaussian this is
     γ̂ = ∑σ²(x)
 and the mutual information at x is
-    μ(x) + √(α)*(√(σ²(x)*γ̂) - √(γ̂))
+    μ(x) + √(α)*(√(σ²(x)+γ̂) - √(γ̂))
 
 where `μ(x)`, `σ(x)` are mean and standard deviation
 of the distribution at point `x`.
@@ -160,16 +160,16 @@ See Contal E., Perchet V., Vayatis N. (2014), "Gaussian Process Optimization
 with Mutual Information" http://proceedings.mlr.press/v32/contal14.pdf
 """
 mutable struct MutualInformation <: AbstractAcquisition
-    α::Float64
+    sqrtα::Float64
     γ̂::Float64
 end
-MutualInformation(; α = 1.0, γ̂ = 0.0) = MutualInformation(α, γ̂)
+MutualInformation(; α = 1.0, γ̂ = 0.0) = MutualInformation(sqrt(α), γ̂)
 function setparams!(a::MutualInformation, model)
     D, nobs = dims(model)
     if iszero(nobs)
         a.γ̂ = 0.0
     else
-        last_x = model.x[:, end]
+        last_x = @view model.x[:, end]
         μ, σ2 = mean_var(model, last_x)
         a.γ̂ += σ2
     end
@@ -177,7 +177,7 @@ end
 function acquisitionfunction(a::MutualInformation, model)
     x -> begin
         μ, σ2 = mean_var(model, x)
-        μ + sqrt(a.α) * (sqrt(σ2 + a.γ̂) - sqrt(a.γ̂))
+        μ + a.sqrtα * (sqrt(σ2 + a.γ̂) - sqrt(a.γ̂))
     end
 end
 
