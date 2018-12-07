@@ -2,8 +2,7 @@ module BayesianOptimization
 import NLopt, GaussianProcesses
 import GaussianProcesses: GPBase, GPE
 import ElasticPDMats: ElasticPDMat
-import SpecialFunctions: erf
-using ForwardDiff, DiffResults, Random, Dates
+using ForwardDiff, DiffResults, Random, Dates, SpecialFunctions
 export BOpt, ExpectedImprovement, ProbabilityOfImprovement, UpperConfidenceBound,
 ThompsonSamplingSimple, MutualInformation, boptimize!, MLGPOptimizer, NoOptimizer,
 Min, Max, BrochuBetaScaling, NoBetaScaling, Silent, Timings, Progress
