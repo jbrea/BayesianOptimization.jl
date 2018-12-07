@@ -18,15 +18,15 @@ f(x) = sum((x .- 1).^2) + randn()                # noisy function to minimize
 
 # Choose as a model an elastic GP with input dimensions 2.
 # The GP is called elastic, because data can be appended efficiently.
-model = ElasticGPE(2,
+model = ElasticGPE(2,                            # 2 input dimensions
                    mean = MeanConst(0.),         
                    kernel = SEArd([0., 0.], 5.),
                    logNoise = 0.,
                    capacity = 3000)              # the initial capacity of the GP is 3000 samples.
 
 # Optimize the hyperparameters of the GP using maximum likelihood (ML) estimates every 50 steps
-modeloptimizer = MLGPOptimizer(every = 50, noisebounds = [-4, 3],
-                               kernbounds = [[-1, -1, 0], [4, 4, 10]],
+modeloptimizer = MLGPOptimizer(every = 50, noisebounds = [-4, 3],       # bounds of the logNoise
+                               kernbounds = [[-1, -1, 0], [4, 4, 10]],  # bounds of the 3 parameters GaussianProcesses.get_param_names(model.kernel)
                                maxeval = 40)
 opt = BOpt(f,
            model,
