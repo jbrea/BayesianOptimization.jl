@@ -17,7 +17,6 @@ end
 @testset "branin" begin
     for ac in [ProbabilityOfImprovement(), ExpectedImprovement(),
                UpperConfidenceBound(), ThompsonSamplingSimple(), MutualInformation()]
-        gradientfree = typeof(ac) <: ThompsonSamplingSimple
         opt = BOpt(x -> branin(x, noiselevel = 0),
                    ElasticGPE(2, mean = MeanConst(-10.),
                               kernel = SEArd([0., 0.], 5.),
@@ -27,7 +26,7 @@ end
                                  kernbounds = [[-1, -1, 0], [4, 4, 10]],
                                  maxeval = 40),
                    [-5., 0.], [10., 15.], maxiterations = 200,
-                   sense = Min, gradientfree = gradientfree,
+                   sense = Min,
                    verbosity = Silent)
         boptimize!(opt)
         reg = regret(opt, branin)

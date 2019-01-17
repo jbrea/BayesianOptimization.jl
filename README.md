@@ -30,12 +30,12 @@ modeloptimizer = MLGPOptimizer(every = 50, noisebounds = [-4, 3],       # bounds
                                maxeval = 40)
 opt = BOpt(f,
            model,
-           ExpectedImprovement(),                 # type of acquisition
+           UpperConfidenceBound(),                # type of acquisition
            modeloptimizer,                        
            [-5., -5.], [5., 5.],                  # lowerbounds, upperbounds         
-           maxiterations = 500,
-           sense = Min,
-           gradientfree = false,                  # use gradient information
+           repetitions = 5,                       # evaluate the function for each input 5 times
+           maxiterations = 100,                   # evaluate at 100 input positions
+           sense = Min,                           # minimize the function
            verbosity = Progress)
 
 result = boptimize!(opt)
