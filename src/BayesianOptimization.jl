@@ -133,7 +133,7 @@ function boptimize!(o::BOpt)
      @mytimeit o.timeroutput "acquisition" o.model_optimum, o.model_optimizer = acquire_model_max(o)
     o.duration.now = time()
     o.verbosity >= Timings && @info(o.timeroutput)
-    (observerd_optimum = o.observed_optimum, observed_optimizer = o.observed_optimizer,
+    (observed_optimum = o.observed_optimum, observed_optimizer = o.observed_optimizer,
      model_optimum = Int(o.sense) * o.model_optimum, model_optimizer = o.model_optimizer)
 end
 
