@@ -12,7 +12,7 @@
 ## Usage
 
 ```julia
-using BayesianOptimization, GaussianProcesses
+using BayesianOptimization, GaussianProcesses, Distributions
 
 f(x) = sum((x .- 1).^2) + randn()                # noisy function to minimize
 
@@ -23,11 +23,12 @@ model = ElasticGPE(2,                            # 2 input dimensions
                    kernel = SEArd([0., 0.], 5.),
                    logNoise = 0.,
                    capacity = 3000)              # the initial capacity of the GP is 3000 samples.
+set_priors!(model.mean, [Normal(1, 2)])
 
-# Optimize the hyperparameters of the GP using maximum likelihood (ML) estimates every 50 steps
-modeloptimizer = MLGPOptimizer(every = 50, noisebounds = [-4, 3],       # bounds of the logNoise
-                               kernbounds = [[-1, -1, 0], [4, 4, 10]],  # bounds of the 3 parameters GaussianProcesses.get_param_names(model.kernel)
-                               maxeval = 40)
+# Optimize the hyperparameters of the GP using maximum a posteriori (MAP) estimates every 50 steps
+modeloptimizer = MAPGPOptimizer(every = 50, noisebounds = [-4, 3],       # bounds of the logNoise
+                                kernbounds = [[-1, -1, 0], [4, 4, 10]],  # bounds of the 3 parameters GaussianProcesses.get_param_names(model.kernel)
+                                maxeval = 40)
 opt = BOpt(f,
            model,
            UpperConfidenceBound(),                # type of acquisition
@@ -45,7 +46,7 @@ This package exports
 * `BOpt`, `boptimize!`
 * acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`, `MutualInformation`
 * scaling of standard deviation in `UpperConfidenceBound`: `BrochuBetaScaling`, `NoBetaScaling`
-* GP hyperparameter optimizer: `MLGPOptimizer`, `NoOptimizer`
+* GP hyperparameter optimizer: `MAPGPOptimizer`, `NoOptimizer`
 * optimization sense: `Min`, `Max`
 * verbosity levels: `Silent`, `Timings`, `Progress`
 

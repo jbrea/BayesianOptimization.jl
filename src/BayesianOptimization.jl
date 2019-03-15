@@ -4,7 +4,7 @@ import GaussianProcesses: GPBase, GPE
 import ElasticPDMats: ElasticPDMat
 using ForwardDiff, DiffResults, Random, Dates, SpecialFunctions, TimerOutputs
 export BOpt, ExpectedImprovement, ProbabilityOfImprovement, UpperConfidenceBound,
-ThompsonSamplingSimple, MutualInformation, boptimize!, MLGPOptimizer, NoOptimizer,
+ThompsonSamplingSimple, MutualInformation, boptimize!, MAPGPOptimizer, NoOptimizer,
 Min, Max, BrochuBetaScaling, NoBetaScaling, Silent, Timings, Progress
 
 ENABLE_TIMINGS = true

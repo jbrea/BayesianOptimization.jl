@@ -17,12 +17,13 @@ end
 @testset "branin" begin
     for ac in [ProbabilityOfImprovement(), ExpectedImprovement(),
                UpperConfidenceBound(), ThompsonSamplingSimple(), MutualInformation()]
+        println("testing on branin with $ac")
         opt = BOpt(x -> branin(x, noiselevel = 0),
                    ElasticGPE(2, mean = MeanConst(-10.),
                               kernel = SEArd([0., 0.], 5.),
                               logNoise = -2., capacity = 3000),
                    ac,
-                   MLGPOptimizer(every = 50, noisebounds = [-4, 3],
+                   MAPGPOptimizer(every = 50, noisebounds = [-4, 3],
                                  kernbounds = [[-1, -1, 0], [4, 4, 10]],
                                  maxeval = 40),
                    [-5., 0.], [10., 15.], maxiterations = 200,

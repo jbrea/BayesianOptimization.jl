@@ -5,8 +5,8 @@ Random.seed!(13)
 f(x, noisevariance = 1) = .1*sum((x .- 2).^2) + cos(sum(π/2 * x)) + noisevariance * randn()
 model = ElasticGPE(1, mean = MeanConst(0.),
                    kernel = SEArd([0.], 5.), logNoise = 0.)
-modeloptimizer = MLGPOptimizer(every = 50, noisebounds = [-2., 3],
-                               kernbounds = [[-1, 0], [4, 10]], maxeval = 40)
+modeloptimizer = MAPGPOptimizer(every = 50, noisebounds = [-2., 3],
+                                kernbounds = [[-1, 0], [4, 10]], maxeval = 40)
 opt = BOpt(f, model, ExpectedImprovement(),
            modeloptimizer, [-5.], [5.],
            maxiterations = 5, sense = Min, repetitions = 5,
