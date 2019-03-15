@@ -1,6 +1,12 @@
 abstract type AbstractAcquisition end
 
 setparams!(a, model) = nothing
+function acquisitionfunction(a, model)
+    x -> begin
+        μ, σ² = mean_var(model, x)
+        a.(μ, σ²)
+    end
+end
 
 """
 The probability of improvement measures the probability that a point `x` leads
@@ -15,12 +21,9 @@ are mean and standard deviation of the distribution at point `x`.
 mutable struct ProbabilityOfImprovement <: AbstractAcquisition
     τ::Float64
 end
-function acquisitionfunction(a::ProbabilityOfImprovement, model)
-    x -> begin
-        μ, σ2 = mean_var(model, x)
-        σ2 == 0 && return float(μ > a.τ)
-        normal_cdf(μ - a.τ, σ2)
-    end
+@inline function (a::ProbabilityOfImprovement)(μ, σ²)
+    σ² == 0 && return float(μ > a.τ)
+    normal_cdf(μ - a.τ, σ²)
 end
 ProbabilityOfImprovement(; τ = -Inf) = ProbabilityOfImprovement(τ)
 
@@ -39,14 +42,11 @@ mutable struct ExpectedImprovement <: AbstractAcquisition
 end
 ExpectedImprovement(; τ = -Inf) = ExpectedImprovement(τ)
 function setparams!(a::Union{ExpectedImprovement,ProbabilityOfImprovement}, model)
-    a.τ = maxy(model)
+    a.τ = max(maxy(model), a.τ)
 end
-function acquisitionfunction(a::ExpectedImprovement, model)
-    x -> begin
-        μ, σ2 = mean_var(model, x)
-        σ2 == 0 && return μ > a.τ ? μ - a.τ : 0.
-        abs(μ - a.τ) * normal_cdf(μ - a.τ, σ2) + √σ2 * normal_pdf(μ - a.τ, σ2)
-    end
+@inline function (a::ExpectedImprovement)(μ, σ²)
+    σ² == 0 && return μ > a.τ ? μ - a.τ : 0.
+    abs(μ - a.τ) * normal_cdf(μ - a.τ, σ²) + √σ² * normal_pdf(μ - a.τ, σ²)
 end
 
 abstract type BetaScaling end
@@ -90,12 +90,7 @@ function setparams!(a::UpperConfidenceBound{BrochuBetaScaling}, model)
     nobs == 0 && (nobs = 1)
     a.βt = sqrt(2*log(nobs^(D/2 + 2)*π^2/(3*a.scaling.δ)))
 end
-function acquisitionfunction(a::UpperConfidenceBound, model)
-    x -> begin
-        μ, σ2 = mean_var(model, x)
-        μ + a.βt * √σ2
-    end
-end
+(a::UpperConfidenceBound)(μ, σ²) = μ + a.βt * √σ²
 
 """
 The acquisition function associated with `ThompsonSamplingSimple` draws
@@ -107,7 +102,7 @@ samples can be tricky, see e.g. http://hildobijl.com/Downloads/GPRT.pdf
 chapter 6.
 """
 struct ThompsonSamplingSimple <: AbstractAcquisition end
-acquisitionfunction(a::ThompsonSamplingSimple, model) = x -> rand(model, reshape(x, :, 1))[1]
+acquisitionfunction(a::ThompsonSamplingSimple, model) = x -> myrand(model, x)
 
 struct MaxMean <: AbstractAcquisition end
 acquisitionfunction(a::MaxMean, model) = x -> mean_var(model, x)[1]
@@ -141,12 +136,7 @@ function setparams!(a::MutualInformation, model)
         a.γ̂ += σ2
     end
 end
-function acquisitionfunction(a::MutualInformation, model)
-    x -> begin
-        μ, σ2 = mean_var(model, x)
-        μ + a.sqrtα * (sqrt(σ2 + a.γ̂) - sqrt(a.γ̂))
-    end
-end
+(a::MutualInformation)(μ, σ²) = μ + a.sqrtα * (sqrt(σ² + a.γ̂) - sqrt(a.γ̂))
 
 # TODO see
 # https://github.com/HildoBijl/GPRT/blob/7166548b8587201fabc671a0647aac2ff96f3555/Chapter6/Chapter6.m#L723
