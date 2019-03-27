@@ -62,7 +62,7 @@ function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds
     maxiterations < lhs_iterations && @error("maxiterations = $maxiterations < lhs_iterations = $lhs_iterations")
     BOpt(func, sense, model, acquisition,
          acquisitionoptions,
-         modeloptimizer, lowerbounds, upperbounds,
+         modeloptimizer, float.(lowerbounds), float.(upperbounds),
          -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)),
          -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)),
          IterationCounter(0, 0, maxiterations),
