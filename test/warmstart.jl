@@ -23,7 +23,7 @@ model_premade = ElasticGPE(x_premade, y_premade,
                lhs_iterations = 10)
     boptimize!(opt)
 
-    @test opt.observed_optimum == maximum(Int(opt.sense) * opt.model.y)
+    @test opt.observed_optimum == minimum(Int(opt.sense) * opt.model.y)
 end
 
 # (#7)

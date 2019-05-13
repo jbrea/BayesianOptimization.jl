@@ -68,4 +68,3 @@ function optimizemodel!(gp::GPBase, options)
     ret == NLopt.FORCED_STOP && throw(InterruptException())
     fx, x, ret
 end
-

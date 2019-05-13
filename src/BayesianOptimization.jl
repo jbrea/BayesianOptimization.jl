@@ -2,6 +2,7 @@ module BayesianOptimization
 import NLopt, GaussianProcesses
 import GaussianProcesses: GPBase, GPE
 import ElasticPDMats: ElasticPDMat
+import ElasticArrays: ElasticArray
 using ForwardDiff, DiffResults, Random, Dates, SpecialFunctions, TimerOutputs
 export BOpt, ExpectedImprovement, ProbabilityOfImprovement, UpperConfidenceBound,
 ThompsonSamplingSimple, MutualInformation, boptimize!, MAPGPOptimizer, NoOptimizer,
@@ -94,7 +95,7 @@ function initialise_model!(o)
     y = Float64[]
     for i in 1:size(x, 2)
         for j in 1:o.repetitions
-            @mytimeit o.timeroutput "function evaluation" push!(y, Int(o.sense) * o.func(x[:, i]))
+            push!(y, _evaluate_function(o, x[:, i]))
         end
     end
     o.iterations.i = o.iterations.c = length(y)/o.repetitions
@@ -120,12 +121,8 @@ function boptimize!(o::BOpt)
         ys = Float64[]
         step!(o.iterations)
         for _ in 1:o.repetitions
-            @mytimeit o.timeroutput "function evaluation" y = Int(o.sense) * o.func(x)
+            y = _evaluate_function(o, x)
             push!(ys, y)
-            if y > Int(o.sense) * o.observed_optimum
-                o.observed_optimum = Int(o.sense) * y
-                o.observed_optimizer = x
-            end
         end
         @mytimeit o.timeroutput "model update" update!(o.model, hcat(fill(x, o.repetitions)...), ys)
         @mytimeit o.timeroutput "model hyperparameter optimization" optimizemodel!(o.modeloptimizer, o.model)
@@ -135,6 +132,15 @@ function boptimize!(o::BOpt)
     o.verbosity >= Timings && @info(o.timeroutput)
     (observed_optimum = o.observed_optimum, observed_optimizer = o.observed_optimizer,
      model_optimum = Int(o.sense) * o.model_optimum, model_optimizer = o.model_optimizer)
+end
+
+function _evaluate_function(o, x)
+    @mytimeit o.timeroutput "function evaluation" y = Int(o.sense) * o.func(x)
+    if y > Int(o.sense) * o.observed_optimum
+        o.observed_optimum = Int(o.sense) * y
+        o.observed_optimizer = x
+    end
+    return y
 end
 
 end # module
