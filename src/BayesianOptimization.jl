@@ -61,11 +61,14 @@ function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds
     acquisitionoptions = merge(defaultoptions(typeof(model), typeof(acquisition)),
                acquisitionoptions)
     maxiterations < lhs_iterations && @error("maxiterations = $maxiterations < lhs_iterations = $lhs_iterations")
+
+    current_optimum   = isempty(model.y) ? -Inf*Int(sense)           : Int(sense) * maximum(model.y)
+    current_optimizer = isempty(model.y) ? zero(float.(lowerbounds)) : model.x[:, argmax(model.y)]
     BOpt(func, sense, model, acquisition,
          acquisitionoptions,
          modeloptimizer, float.(lowerbounds), float.(upperbounds),
-         -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)),
-         -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)),
+         current_optimum, current_optimizer,
+         current_optimum, copy(current_optimizer),
          IterationCounter(0, 0, maxiterations),
          DurationCounter(now, maxduration, now, now + maxduration),
          NLopt.Opt(acquisitionoptions.method, length(lowerbounds)),
