@@ -2,7 +2,6 @@ module BayesianOptimization
 import NLopt, GaussianProcesses
 import GaussianProcesses: GPBase, GPE
 import ElasticPDMats: ElasticPDMat
-import ElasticArrays: ElasticArray
 using ForwardDiff, DiffResults, Random, Dates, SpecialFunctions, TimerOutputs
 export BOpt, ExpectedImprovement, ProbabilityOfImprovement, UpperConfidenceBound,
 ThompsonSamplingSimple, MutualInformation, boptimize!, MAPGPOptimizer, NoOptimizer,
