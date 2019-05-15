@@ -60,11 +60,14 @@ function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds
     acquisitionoptions = merge(defaultoptions(typeof(model), typeof(acquisition)),
                acquisitionoptions)
     maxiterations < lhs_iterations && @error("maxiterations = $maxiterations < lhs_iterations = $lhs_iterations")
+
+    current_optimum   = isempty(model.y) ? -Inf*Int(sense)           : Int(sense) * maximum(model.y)
+    current_optimizer = isempty(model.y) ? zero(float.(lowerbounds)) : model.x[:, argmax(model.y)]
     BOpt(func, sense, model, acquisition,
          acquisitionoptions,
          modeloptimizer, float.(lowerbounds), float.(upperbounds),
-         -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)),
-         -Inf64*Int(sense), Array{Float64}(undef, length(lowerbounds)),
+         current_optimum, current_optimizer,
+         current_optimum, copy(current_optimizer),
          IterationCounter(0, 0, maxiterations),
          DurationCounter(now, maxduration, now, now + maxduration),
          NLopt.Opt(acquisitionoptions.method, length(lowerbounds)),
@@ -94,7 +97,7 @@ function initialise_model!(o)
     y = Float64[]
     for i in 1:size(x, 2)
         for j in 1:o.repetitions
-            @mytimeit o.timeroutput "function evaluation" push!(y, Int(o.sense) * o.func(x[:, i]))
+            push!(y, _evaluate_function(o, x[:, i]))
         end
     end
     o.iterations.i = o.iterations.c = length(y)/o.repetitions
@@ -120,12 +123,8 @@ function boptimize!(o::BOpt)
         ys = Float64[]
         step!(o.iterations)
         for _ in 1:o.repetitions
-            @mytimeit o.timeroutput "function evaluation" y = Int(o.sense) * o.func(x)
+            y = _evaluate_function(o, x)
             push!(ys, y)
-            if y > Int(o.sense) * o.observed_optimum
-                o.observed_optimum = Int(o.sense) * y
-                o.observed_optimizer = x
-            end
         end
         @mytimeit o.timeroutput "model update" update!(o.model, hcat(fill(x, o.repetitions)...), ys)
         @mytimeit o.timeroutput "model hyperparameter optimization" optimizemodel!(o.modeloptimizer, o.model)
@@ -135,6 +134,15 @@ function boptimize!(o::BOpt)
     o.verbosity >= Timings && @info(o.timeroutput)
     (observed_optimum = o.observed_optimum, observed_optimizer = o.observed_optimizer,
      model_optimum = Int(o.sense) * o.model_optimum, model_optimizer = o.model_optimizer)
+end
+
+function _evaluate_function(o, x)
+    @mytimeit o.timeroutput "function evaluation" y = Int(o.sense) * o.func(x)
+    if y > Int(o.sense) * o.observed_optimum
+        o.observed_optimum = Int(o.sense) * y
+        o.observed_optimizer = x
+    end
+    return y
 end
 
 end # module

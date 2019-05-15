@@ -10,7 +10,11 @@ dims(model::GPBase) = size(model.x)
 maxy(model::GPBase) = length(model.y) == 0 ? -Inf : maximum(model.y)
 update!(model::GPE{X,Y,M,K,P,D}, x, y) where {X,Y,M,K,P<:ElasticPDMat, D} = append!(model, x, y)
 function update!(model::GPE{X,Y,M,K,P,D}, x, y) where {X,Y,M,K,P,D}
-    GP.fit!(model, hcat(model.x, x), [model.y; y])
+    if isempty(y)
+        GP.fit!(model, model.x, model.y)
+    else
+        GP.fit!(model, hcat(model.x, x), [model.y; y])
+    end
 end
 
 mutable struct MAPGPOptimizer{NT} <: ModelOptimizer
@@ -68,4 +72,3 @@ function optimizemodel!(gp::GPBase, options)
     ret == NLopt.FORCED_STOP && throw(InterruptException())
     fx, x, ret
 end
-
