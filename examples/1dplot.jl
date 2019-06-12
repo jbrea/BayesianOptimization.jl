@@ -1,7 +1,7 @@
 using BayesianOptimization, GaussianProcesses, PGFPlotsX, Random
 push!(PGFPlotsX.CUSTOM_PREAMBLE, "\\usepgfplotslibrary{fillbetween}")
 
-Random.seed!(13)
+Random.seed!(134)
 f(x, noisevariance = 1) = .1*sum((x .- 2).^2) + cos(sum(π/2 * x)) + noisevariance * randn()
 model = ElasticGPE(1, mean = MeanConst(0.),
                    kernel = SEArd([0.], 5.), logNoise = 0.)
@@ -35,7 +35,7 @@ fmax, xmax = BayesianOptimization.acquire_max(opt.opt,
              "\\addlegendentry{model mean}",
              Plot({no_marks, "green!80!black", very_thick}, Coordinates(xs, f.(xs, 0))),
              "\\addlegendentry{noisefree target}",
-             {height = "3cm", ytick = [0, 4e-2, 8e-2]},
+             {height = "3cm", ytick=[0, .05, .1]},
              Plot({only_marks, red, mark="triangle*",
                    mark_size = "5pt", mark_options = {rotate = "0"}},
                   Coordinates(xmax, [fmax])),

@@ -1,4 +1,4 @@
-using BayesianOptimization, GaussianProcesses, Random
+using BayesianOptimization, GaussianProcesses, Random, Statistics
 
 # function and regret definitions
 branin(x::Vector; kwargs...) = branin(x[1], x[2]; kwargs...)
