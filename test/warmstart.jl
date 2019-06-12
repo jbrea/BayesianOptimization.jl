@@ -22,7 +22,7 @@ model_premade = GPE(x_premade, y_premade,
                maxiterations = 10,
                sense = Min,
                verbosity = Silent,
-               lhs_iterations = 10)
+               initializer_iterations = 10)
     boptimize!(opt)
 
     @test opt.observed_optimum == Int(opt.sense) * maximum(opt.model.y)
@@ -41,14 +41,14 @@ end
                maxiterations = 10,
                sense = Min,
                verbosity = Silent,
-               lhs_iterations = 5)
+               initializer_iterations = 5)
 
     @test opt.observed_optimum   == Int(opt.sense) * maximum(y_premade)
     @test opt.observed_optimizer == x_premade[:, argmax(y_premade)]
 end
 
 # (#7)
-@testset "LHS Iterations to 0 on pre-made model" begin
+@testset "Initial iterations to 0 on pre-made model" begin
     ac = ExpectedImprovement()
     opt = BOpt(x -> branin(x, noiselevel = 0),
                model_premade,
@@ -60,7 +60,7 @@ end
                maxiterations = 0,
                sense = Min,
                verbosity = Silent,
-               lhs_iterations = 0)
+               initializer_iterations = 0)
     boptimize!(opt)
 
     @test opt.acquisition.τ == maximum(y_premade)

@@ -46,7 +46,7 @@ This package exports
 * `BOpt`, `boptimize!`
 * acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`, `MutualInformation`
 * scaling of standard deviation in `UpperConfidenceBound`: `BrochuBetaScaling`, `NoBetaScaling`
-* GP hyperparameter optimizer: `MAPGPOptimizer`, `NoOptimizer`
+* GP hyperparameter optimizer: `MAPGPOptimizer`, `NoModelOptimizer`
 * optimization sense: `Min`, `Max`
 * verbosity levels: `Silent`, `Timings`, `Progress`
 
@@ -60,5 +60,8 @@ Use the REPL help, e.g. `?Bopt`, to get more information.
 ## Similar Projects
 
 [BayesOpt](https://github.com/jbrea/BayesOpt.jl) is a wrapper of the established
-[BayesOpt](https://github.com/rmcantin/bayesopt) toolbox written in C++. It has
-more features and seems comparable in performance to this package.
+[BayesOpt](https://github.com/rmcantin/bayesopt) toolbox written in C++.
+
+[Dragonfly](https://github.com/dragonfly/dragonfly) is a feature-rich package
+for scalable Bayesian optimization written in Python. Use it in Julia with
+[PyCall](https://github.com/JuliaPy/PyCall.jl).

@@ -1,11 +1,24 @@
+"""
+This package exports
+* `BOpt`, `boptimize!`
+* acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`, `MutualInformation`
+* scaling of standard deviation in `UpperConfidenceBound`: `BrochuBetaScaling`, `NoBetaScaling`
+* GP hyperparameter optimizer: `MAPGPOptimizer`, `NoModelOptimizer`
+* optimization sense: `Min`, `Max`
+* verbosity levels: `Silent`, `Timings`, `Progress`
+
+Use the REPL help, e.g. `?Bopt`, to get more information.
+"""
 module BayesianOptimization
-import NLopt, GaussianProcesses
+import NLopt, GaussianProcesses, Sobol
+import Sobol: SobolSeq
 import GaussianProcesses: GPBase, GPE
 import ElasticPDMats: ElasticPDMat
 using ForwardDiff, DiffResults, Random, Dates, SpecialFunctions, TimerOutputs
-export BOpt, ExpectedImprovement, ProbabilityOfImprovement, UpperConfidenceBound,
-ThompsonSamplingSimple, MutualInformation, boptimize!, MAPGPOptimizer, NoOptimizer,
-Min, Max, BrochuBetaScaling, NoBetaScaling, Silent, Timings, Progress
+export BOpt, ExpectedImprovement, ProbabilityOfImprovement,
+UpperConfidenceBound, ThompsonSamplingSimple, MutualInformation, boptimize!,
+MAPGPOptimizer, NoModelOptimizer, Min, Max, BrochuBetaScaling, NoBetaScaling,
+Silent, Timings, Progress
 
 ENABLE_TIMINGS = true
 
@@ -24,7 +37,7 @@ include("models/gp.jl")
 @enum Sense Min=-1 Max=1
 @enum Verbosity Silent=0 Timings=1 Progress=2
 
-mutable struct BOpt{F,M,A,AO,MO}
+mutable struct BOpt{F,M,A,AO,MO,Ti}
     func::F
     sense::Sense
     model::M
@@ -41,7 +54,7 @@ mutable struct BOpt{F,M,A,AO,MO}
     duration::DurationCounter
     opt::NLopt.Opt
     verbosity::Verbosity
-    lhs_iterations::Int
+    initializer::Ti
     repetitions::Int
     timeroutput::TimerOutput
 end
@@ -49,17 +62,22 @@ end
     BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds;
               sense = Max, maxiterations = 10^4, maxduration = Inf,
               acquisitionoptions = NamedTuple(), repetitions = 1,
-              verbosity = Progress, lhs_iterations = 5*length(lowerbounds))
+              verbosity = Progress,
+              initializer_iterations = 5*length(lowerbounds),
+              initializer = ScaledSobolIterator(lowerbounds, upperbounds,
+                                                initializer_iterations))
 """
 function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds;
               sense = Max, maxiterations = 10^4, maxduration = Inf,
               acquisitionoptions = NamedTuple(),
               repetitions = 1, verbosity = Progress,
-              lhs_iterations = 5*length(lowerbounds))
+              initializer_iterations = 5*length(lowerbounds),
+              initializer = ScaledSobolIterator(lowerbounds, upperbounds,
+                                                initializer_iterations))
     now = time()
     acquisitionoptions = merge(defaultoptions(typeof(model), typeof(acquisition)),
                acquisitionoptions)
-    maxiterations < lhs_iterations && @error("maxiterations = $maxiterations < lhs_iterations = $lhs_iterations")
+    maxiterations < length(initializer) && @error("maxiterations = $maxiterations < length(initializer) = $(length(initializer))")
 
     current_optimum   = isempty(model.y) ? -Inf*Int(sense)           : Int(sense) * maximum(model.y)
     current_optimizer = isempty(model.y) ? zero(float.(lowerbounds)) : model.x[:, argmax(model.y)]
@@ -71,7 +89,7 @@ function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds
          IterationCounter(0, 0, maxiterations),
          DurationCounter(now, maxduration, now, now + maxduration),
          NLopt.Opt(acquisitionoptions.method, length(lowerbounds)),
-         verbosity, lhs_iterations, repetitions, TimerOutput())
+         verbosity, initializer, repetitions, TimerOutput())
 end
 isdone(o::BOpt) = isdone(o.iterations) || isdone(o.duration)
 import Base: show
@@ -93,17 +111,16 @@ function show(io::IO, mime::MIME"text/plain", o::BOpt)
 end
 
 function initialise_model!(o)
-    @mytimeit o.timeroutput "acquisition" x = latin_hypercube_sampling(o.lowerbounds, o.upperbounds, o.lhs_iterations)
-    y = Float64[]
-    for i in 1:size(x, 2)
+    ys = Float64[]
+    xs = Vector{Float64}[]
+    for x in o.initializer
         for j in 1:o.repetitions
-            push!(y, _evaluate_function(o, x[:, i]))
+            push!(ys, _evaluate_function(o, x))
+            push!(xs, x)
         end
     end
-    o.iterations.i = o.iterations.c = length(y)/o.repetitions
-    @mytimeit o.timeroutput "model update" update!(o.model,
-                           hcat(hcat([fill(x[:, i], o.repetitions) for i in 1:size(x, 2)]...)...),
-                           y)
+    o.iterations.i = o.iterations.c = length(ys)/o.repetitions
+    @mytimeit o.timeroutput "model update" update!(o.model, hcat(xs...), ys)
     @mytimeit o.timeroutput "model hyperparameter optimization" optimizemodel!(o.modeloptimizer, o.model)
     o.opt = nlopt_setup(o.acquisition, o.model, o.lowerbounds, o.upperbounds,
                         o.acquisitionoptions)
