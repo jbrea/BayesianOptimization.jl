@@ -42,11 +42,20 @@ opt = BOpt(f,
 result = boptimize!(opt)
 ```
 
+To continue the optimization, one can call `boptimize!(opt)` multiple times.
+```
+result = boptimize!(opt) # first time (includes initialization)
+result = boptimize!(opt) # restart
+opt.maxiterations = 50   # set maxiterations for the next call
+result = boptimize!(opt) # restart again
+```
+
 This package exports
 * `BOpt`, `boptimize!`
 * acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`, `MutualInformation`
 * scaling of standard deviation in `UpperConfidenceBound`: `BrochuBetaScaling`, `NoBetaScaling`
 * GP hyperparameter optimizer: `MAPGPOptimizer`, `NoModelOptimizer`
+* Initializer: `ScaledSobolIterator`, `ScaledLHSIterator`
 * optimization sense: `Min`, `Max`
 * verbosity levels: `Silent`, `Timings`, `Progress`
 

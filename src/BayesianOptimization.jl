@@ -4,6 +4,7 @@ This package exports
 * acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`, `MutualInformation`
 * scaling of standard deviation in `UpperConfidenceBound`: `BrochuBetaScaling`, `NoBetaScaling`
 * GP hyperparameter optimizer: `MAPGPOptimizer`, `NoModelOptimizer`
+* Initializer: `ScaledSobolIterator`, `ScaledLHSIterator`
 * optimization sense: `Min`, `Max`
 * verbosity levels: `Silent`, `Timings`, `Progress`
 
@@ -18,7 +19,7 @@ using ForwardDiff, DiffResults, Random, Dates, SpecialFunctions, TimerOutputs
 export BOpt, ExpectedImprovement, ProbabilityOfImprovement,
 UpperConfidenceBound, ThompsonSamplingSimple, MutualInformation, boptimize!,
 MAPGPOptimizer, NoModelOptimizer, Min, Max, BrochuBetaScaling, NoBetaScaling,
-Silent, Timings, Progress
+Silent, Timings, Progress, ScaledSobolIterator, ScaledLHSIterator
 
 ENABLE_TIMINGS = true
 
