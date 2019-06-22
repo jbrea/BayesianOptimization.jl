@@ -89,7 +89,7 @@ function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds
          current_optimum, copy(current_optimizer),
          IterationCounter(0, 0, maxiterations),
          DurationCounter(now, maxduration, now, now + maxduration),
-         NLopt.Opt(acquisitionoptions.method, length(lowerbounds)),
+         nlopt_setup(acquisition, model, lowerbounds, upperbounds, acquisitionoptions),
          verbosity, initializer, repetitions, TimerOutput())
 end
 isdone(o::BOpt) = isdone(o.iterations) || isdone(o.duration)
@@ -123,8 +123,6 @@ function initialise_model!(o)
     o.iterations.i = o.iterations.c = length(ys)/o.repetitions
     @mytimeit o.timeroutput "model update" update!(o.model, hcat(xs...), ys)
     @mytimeit o.timeroutput "model hyperparameter optimization" optimizemodel!(o.modeloptimizer, o.model)
-    o.opt = nlopt_setup(o.acquisition, o.model, o.lowerbounds, o.upperbounds,
-                        o.acquisitionoptions)
 end
 """
     boptimize!(o::BOpt)
@@ -133,7 +131,7 @@ function boptimize!(o::BOpt)
     init!(o.duration)
     init!(o.iterations)
     reset_timer!(o.timeroutput)
-    o.iterations.i == 0 && initialise_model!(o)
+    o.iterations.i == 0 && length(o.initializer) > 0 && initialise_model!(o)
     while !isdone(o)
         o.verbosity >= Progress && @info("$(now())\titeration: $(o.iterations.i)\tcurrent optimum: $(o.observed_optimum)")
         setparams!(o.acquisition, o.model)

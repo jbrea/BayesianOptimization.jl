@@ -1,5 +1,5 @@
 using BayesianOptimization, GaussianProcesses
-using Test
+using Test, Random
 include("acquisitionfunctions.jl")
 include("branin.jl")
 include("warmstart.jl")

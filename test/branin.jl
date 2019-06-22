@@ -15,6 +15,7 @@ function regret(opt, func)
 end
 
 @testset "branin" begin
+    Random.seed!(123)
     for ac in [ProbabilityOfImprovement(), ExpectedImprovement(),
                UpperConfidenceBound(), ThompsonSamplingSimple(), MutualInformation()]
         println("testing on branin with $ac")

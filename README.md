@@ -42,12 +42,39 @@ opt = BOpt(f,
 result = boptimize!(opt)
 ```
 
+### Resume optimization
+
 To continue the optimization, one can call `boptimize!(opt)` multiple times.
 ```
 result = boptimize!(opt) # first time (includes initialization)
 result = boptimize!(opt) # restart
 opt.maxiterations = 50   # set maxiterations for the next call
 result = boptimize!(opt) # restart again
+```
+
+### (Warm-)start with some known function values
+
+By default, the first `5*length(lowerbounds)` input points are sampled from a
+Sobol sequence. If instead one has already some function values available and
+wants to skip the initialization with the Sobol sequence, one can update the
+model with the available data and set `initializer_iterations = 0`. For example
+(continuing the above example after setting the `modeloptimizer`).
+```
+x = [rand(2) for _ in 1:20]
+y = -f.(x)
+append!(model, hcat(x...), y)
+
+opt = BOpt(f,
+           model,
+           UpperConfidenceBound(),
+           modeloptimizer,                        
+           [-5., -5.], [5., 5.],
+           maxiterations = 100,
+           sense = Min,
+           initializer_iterations = 0
+          )
+
+result = boptimize!(opt)
 ```
 
 This package exports

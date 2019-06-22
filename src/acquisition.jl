@@ -25,9 +25,6 @@ function nlopt_setup(a::AbstractAcquisition, model, lowerbounds, upperbounds,
     if string(options.method)[2] == 'D'
         f = wrap_gradient(acquisitionfunction(a, model))
         NLopt.max_objective!(opt, f)
-        g = similar(lowerbounds)
-        f(sample(lowerbounds, upperbounds), g)
-        isnan(g[1]) && @warn("Gradient evaluates to $g. Consider gradient-free methods.")
     else
         NLopt.max_objective!(opt, wrap_dummygradient(acquisitionfunction(a, model)))
     end
