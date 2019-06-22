@@ -45,7 +45,7 @@ result = boptimize!(opt)
 ### Resume optimization
 
 To continue the optimization, one can call `boptimize!(opt)` multiple times.
-```
+```julia
 result = boptimize!(opt) # first time (includes initialization)
 result = boptimize!(opt) # restart
 maxiterations!(opt, 50)  # set maxiterations for the next call
@@ -59,7 +59,7 @@ Sobol sequence. If instead one has already some function values available and
 wants to skip the initialization with the Sobol sequence, one can update the
 model with the available data and set `initializer_iterations = 0`. For example
 (continuing the above example after setting the `modeloptimizer`).
-```
+```julia
 x = [rand(2) for _ in 1:20]
 y = -f.(x)
 append!(model, hcat(x...), y)
