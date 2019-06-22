@@ -14,6 +14,13 @@ end
 isdone(s::IterationCounter) = s.c == s.N
 step!(s::IterationCounter) = (s.c += 1; s.i += 1)
 init!(s::IterationCounter) = s.c = 0
+"""
+     maxiterations!(s::IterationCounter, N)
+     maxiterations!(o::BOpt, N)
+
+Sets the maximal number of iterations per call of `boptimize!` to `N`.
+"""
+maxiterations!(s::IterationCounter, N) = s.N = N
 
 mutable struct DurationCounter
     starttime::Float64
@@ -26,6 +33,13 @@ function init!(s::DurationCounter)
     s.endtime = s.starttime + s.duration
 end
 isdone(s::DurationCounter) = (s.now = time()) >= s.endtime
+"""
+     maxduration!(s::IterationCounter, duration)
+     maxduration!(o::BOpt, duration)
+
+Sets the maximal duration per call of `boptimize!` to `duration`.
+"""
+maxduration!(s::DurationCounter, d) = s.duration = d
 
 sample(lowerbounds, upperbounds) =
     rand(length(lowerbounds)) .* (upperbounds .- lowerbounds) .+ lowerbounds

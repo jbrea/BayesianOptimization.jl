@@ -7,6 +7,7 @@ This package exports
 * Initializer: `ScaledSobolIterator`, `ScaledLHSIterator`
 * optimization sense: `Min`, `Max`
 * verbosity levels: `Silent`, `Timings`, `Progress`
+* helper: maxduration!, maxiterations!
 
 Use the REPL help, e.g. `?Bopt`, to get more information.
 """
@@ -19,7 +20,8 @@ using ForwardDiff, DiffResults, Random, Dates, SpecialFunctions, TimerOutputs
 export BOpt, ExpectedImprovement, ProbabilityOfImprovement,
 UpperConfidenceBound, ThompsonSamplingSimple, MutualInformation, boptimize!,
 MAPGPOptimizer, NoModelOptimizer, Min, Max, BrochuBetaScaling, NoBetaScaling,
-Silent, Timings, Progress, ScaledSobolIterator, ScaledLHSIterator
+Silent, Timings, Progress, ScaledSobolIterator, ScaledLHSIterator, maxduration!,
+maxiterations!
 
 ENABLE_TIMINGS = true
 
@@ -93,6 +95,8 @@ function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds
          verbosity, initializer, repetitions, TimerOutput())
 end
 isdone(o::BOpt) = isdone(o.iterations) || isdone(o.duration)
+maxduration!(o::BOpt, d) = maxduration!(o.duration, d)
+maxiterations!(o::BOpt, N) = maxiterations!(o.iterations, N)
 import Base: show
 function show(io::IO, mime::MIME"text/plain", o::BOpt)
     println(io, "Bayesian Optimization object\n\nmodel:")

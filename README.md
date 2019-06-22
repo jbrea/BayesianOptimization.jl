@@ -48,7 +48,7 @@ To continue the optimization, one can call `boptimize!(opt)` multiple times.
 ```
 result = boptimize!(opt) # first time (includes initialization)
 result = boptimize!(opt) # restart
-opt.maxiterations = 50   # set maxiterations for the next call
+maxiterations!(opt, 50)  # set maxiterations for the next call
 result = boptimize!(opt) # restart again
 ```
 
@@ -85,6 +85,7 @@ This package exports
 * Initializer: `ScaledSobolIterator`, `ScaledLHSIterator`
 * optimization sense: `Min`, `Max`
 * verbosity levels: `Silent`, `Timings`, `Progress`
+* helper: maxduration!, maxiterations!
 
 Use the REPL help, e.g. `?Bopt`, to get more information.
 
