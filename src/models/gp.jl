@@ -8,8 +8,8 @@ myrand(model::GPBase, x) = rand(model, x)
 mean_var(model::GPBase, x::AbstractArray{<:Any, 2}) = GP.predict_f(model, x)
 dims(model::GPBase) = size(model.x)
 maxy(model::GPBase) = length(model.y) == 0 ? -Inf : maximum(model.y)
-update!(model::GPE{X,Y,M,K,P,D}, x, y) where {X,Y,M,K,P<:ElasticPDMat, D} = append!(model, x, y)
-function update!(model::GPE{X,Y,M,K,P,D}, x, y) where {X,Y,M,K,P,D}
+update!(model::GPE{<:ElasticArray}, x, y) = append!(model, x, y)
+function update!(model::GPE, x, y)
     if isempty(y)
         GP.fit!(model, model.x, model.y)
     else
