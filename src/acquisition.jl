@@ -1,5 +1,6 @@
 ### acquisition optimization setup
 
+# TODO: does it really need to be Type here?
 defaultoptions(::Type{<:GPE}, ::Type{<:AbstractAcquisition}) =
     (method = :LD_LBFGS, restarts = 10, maxeval = 2000)
 defaultoptions(::Type{<:GPE}, ::Type{ThompsonSamplingSimple}) =
@@ -18,7 +19,10 @@ function nlopt_setup(a::AbstractAcquisition, model, lowerbounds, upperbounds,
                      options)
     D = length(lowerbounds)
     opt = NLopt.Opt(options.method, D)
-    NLopt.maxeval!(opt, options.maxeval)
+    for (option, value) in pairs(options)
+        (option == :method || option == :restarts) && continue
+        setproperty!(opt, option, value)
+    end
     NLopt.lower_bounds!(opt, lowerbounds)
     NLopt.upper_bounds!(opt, upperbounds)
     setparams!(a, model)
@@ -45,9 +49,10 @@ end
 function acquire_max(opt, lowerbounds, upperbounds, restarts)
     maxf = -Inf
     maxx = lowerbounds
-    x0s = latin_hypercube_sampling(lowerbounds, upperbounds, restarts)
-    for i in 1:restarts
-        f, x, ret = NLopt.optimize(opt, x0s[:, i])
+    seq = ScaledLHSIterator(lowerbounds, upperbounds, restarts)
+    for x0 in seq
+        f, x, ret = NLopt.optimize(opt, x0)
+#         @show x0 f x ret
 #         println("$x0, $x, $f, $ret")
         ret == NLopt.FORCED_STOP && throw(InterruptException())
         if f > maxf
