@@ -7,6 +7,7 @@
 ![Lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
 ![Lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg) -->
 [![Build Status](https://travis-ci.org/jbrea/BayesianOptimization.jl.svg?branch=master)](https://travis-ci.org/jbrea/BayesianOptimization.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/github/jbrea/BayesianOptimization.jl?branch=master&svg=true)](https://ci.appveyor.com/project/jbrea/bayesianoptimization-jl)
 [![codecov.io](http://codecov.io/github/jbrea/BayesianOptimization.jl/coverage.svg?branch=master)](http://codecov.io/github/jbrea/BayesianOptimization.jl?branch=master)
 
 ## Usage
@@ -31,13 +32,17 @@ modeloptimizer = MAPGPOptimizer(every = 50, noisebounds = [-4, 3],       # bound
                                 maxeval = 40)
 opt = BOpt(f,
            model,
-           UpperConfidenceBound(),                # type of acquisition
+           UpperConfidenceBound(),                   # type of acquisition
            modeloptimizer,                        
-           [-5., -5.], [5., 5.],                  # lowerbounds, upperbounds         
-           repetitions = 5,                       # evaluate the function for each input 5 times
-           maxiterations = 100,                   # evaluate at 100 input positions
-           sense = Min,                           # minimize the function
-           verbosity = Progress)
+           [-5., -5.], [5., 5.],                     # lowerbounds, upperbounds         
+           repetitions = 5,                          # evaluate the function for each input 5 times
+           maxiterations = 100,                      # evaluate at 100 input positions
+           sense = Min,                              # minimize the function
+           acquisitionoptions = (method = :LD_LBFGS, # run optimization of acquisition function with NLopts :LD_LBFGS method
+                                 restarts = 5,       # run the NLopt method from 5 random initial conditions each time.
+                                 maxtime = 0.1,      # run the NLopt method for at most 0.1 second each time
+                                 maxeval = 1000),    # run the NLopt methods for at most 1000 iterations (for other options see https://github.com/JuliaOpt/NLopt.jl)
+            verbosity = Progress)
 
 result = boptimize!(opt)
 ```
@@ -85,7 +90,7 @@ This package exports
 * Initializer: `ScaledSobolIterator`, `ScaledLHSIterator`
 * optimization sense: `Min`, `Max`
 * verbosity levels: `Silent`, `Timings`, `Progress`
-* helper: maxduration!, maxiterations!
+* helper: `maxduration!`, `maxiterations!`
 
 Use the REPL help, e.g. `?Bopt`, to get more information.
 
