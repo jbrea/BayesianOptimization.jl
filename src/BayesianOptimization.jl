@@ -83,7 +83,7 @@ function BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds
     maxiterations < length(initializer) && @error("maxiterations = $maxiterations < length(initializer) = $(length(initializer))")
 
     current_optimum   = isempty(model.y) ? -Inf*Int(sense)           : Int(sense) * maximum(model.y)
-    current_optimizer = isempty(model.y) ? zero(float.(lowerbounds)) : model.x[:, argmax(model.y)]
+    current_optimizer = isempty(model.y) ? zero(float.(lowerbounds)) : Array(model.x[:, argmax(model.y)])
     BOpt(func, sense, model, acquisition,
          acquisitionoptions,
          modeloptimizer, float.(lowerbounds), float.(upperbounds),
