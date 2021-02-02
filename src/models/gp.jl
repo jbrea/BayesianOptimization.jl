@@ -69,6 +69,6 @@ function optimizemodel!(gp::GPBase, options)
     NLopt.maxeval!(opt, options.maxeval)
     NLopt.max_objective!(opt, f)
     fx, x, ret = NLopt.optimize(opt, GP.get_params(gp; params_kwargs...))
-    ret == NLopt.FORCED_STOP && throw(InterruptException())
+    ret == NLopt.FORCED_STOP && @warn("NLopt returned FORCED_STOP while optimizing the GP.")
     fx, x, ret
 end
