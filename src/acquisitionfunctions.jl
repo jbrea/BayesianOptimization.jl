@@ -46,7 +46,7 @@ function setparams!(a::Union{ExpectedImprovement,ProbabilityOfImprovement}, mode
 end
 @inline function (a::ExpectedImprovement)(μ, σ²)
     σ² == 0 && return μ > a.τ ? μ - a.τ : 0.
-    abs(μ - a.τ) * normal_cdf(μ - a.τ, σ²) + √σ² * normal_pdf(μ - a.τ, σ²)
+    (μ - a.τ) * normal_cdf(μ - a.τ, σ²) + √σ² * normal_pdf(μ - a.τ, σ²)
 end
 
 abstract type BetaScaling end
