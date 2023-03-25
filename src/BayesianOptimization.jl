@@ -1,6 +1,6 @@
 """
 This package exports
-* `BOpt`, `boptimize!`
+* `BOpt`, `boptimize!`, `optimize`
 * acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`, `MutualInformation`
 * scaling of standard deviation in `UpperConfidenceBound`: `BrochuBetaScaling`, `NoBetaScaling`
 * GP hyperparameter optimizer: `MAPGPOptimizer`, `NoModelOptimizer`
@@ -21,7 +21,7 @@ export BOpt, ExpectedImprovement, ProbabilityOfImprovement,
 UpperConfidenceBound, ThompsonSamplingSimple, MutualInformation, boptimize!,
 MAPGPOptimizer, NoModelOptimizer, Min, Max, BrochuBetaScaling, NoBetaScaling,
 Silent, Timings, Progress, ScaledSobolIterator, ScaledLHSIterator, maxduration!,
-maxiterations!
+maxiterations!, optimize
 
 ENABLE_TIMINGS = true
 
@@ -163,6 +163,57 @@ function _evaluate_function(o, x)
         o.observed_optimizer = x
     end
     return y
+end
+"""
+    optimize(f, inputdimension; optkwargs...)
+
+Optimize function `f` using default parameters. All parameters can be overwritten by passing respective values as keyword arguments. Pass dimension of the domain of `f` as a 2nd argument.
+    
+TODO: document `optkwargs` defaults here, `optkwargs` may include keywords:
+
+model, acquisition, modeloptimizer, lowerbounds, upperbounds, sense, maxiterations, maxduration, acquisitionoptions, repetitions, verbosity, initializer_iterations, initializer
+"""
+function optimize(f, inputdimension; optkwargs...)
+    # TODO: Can inputdimension be avoided, e.g., by inspecting MethodTable of f?
+    # TODO: come up with sensible optdefaults, 
+    #       maybe move the def. somewhere else
+
+    # optdefaults can be extended to overwrite kwargs in the BOpt constructor 
+    optdefaults = (
+        func = f,
+        model = GaussianProcesses.ElasticGPE(
+            inputdimension,
+            mean = GaussianProcesses.MeanConst(0.0),
+            kernel = GaussianProcesses.Mat52Ard(zeros(inputdimension), 0.0),
+            logNoise = -2.0,
+            capacity = 3000,
+        ),
+        acquisition = ExpectedImprovement(),
+        modeloptimizer = MAPGPOptimizer(
+            every = 20,
+            noisebounds = [-4, 3],
+            kernbounds = [[-3 * ones(inputdimension); -3], [4 * ones(inputdimension); 3]],
+            maxeval = 100,
+        ),
+        lowerbounds = -100 .* ones(inputdimension),
+        upperbounds = 100 .* ones(inputdimension)   #,
+        # sense = Min, 
+        # ...
+    )
+    # merging from left-to-right, order of args is kept
+    # optkwargs overwrites and extends optdefaults
+    params = merge(optdefaults, optkwargs)
+    # split params into args of type Array and kwargs of type NamedTuple
+    argnames = [:func, :model, :acquisition, :modeloptimizer, :lowerbounds, :upperbounds]
+    args = [v for (k, v) in pairs(params) if k in argnames]
+    kwargs = (;
+        zip(
+            [k for (k, v) in pairs(params) if !(k in argnames)],
+            [v for (k, v) in pairs(params) if !(k in argnames)],
+        )...
+    )
+    opt = BOpt(args...; kwargs...)
+    boptimize!(opt)
 end
 
 end # module

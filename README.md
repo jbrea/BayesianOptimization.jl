@@ -83,7 +83,7 @@ result = boptimize!(opt)
 ```
 
 This package exports
-* `BOpt`, `boptimize!`
+* `BOpt`, `boptimize!`, `optimize`
 * acquisition types: `ExpectedImprovement`, `ProbabilityOfImprovement`, `UpperConfidenceBound`, `ThompsonSamplingSimple`, `MutualInformation`
 * scaling of standard deviation in `UpperConfidenceBound`: `BrochuBetaScaling`, `NoBetaScaling`
 * GP hyperparameter optimizer: `MAPGPOptimizer`, `NoModelOptimizer`
