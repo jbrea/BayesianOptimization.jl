@@ -16,6 +16,4 @@
     @test_throws ArgumentError BO.merge_with_defaults(f,l,u, (;hello="world"))
     # length of lowerbound not eq. to lenght of upperbound results in an ArgumentError
     @test_throws ArgumentError BO.merge_with_defaults(f,[1.],[3.,4.], (;))
-    # wrong order of lowerbound, upperbound args results in an ArgumentError
-    @test_throws ArgumentError BO.merge_with_defaults(f,u,l,(;))
 end

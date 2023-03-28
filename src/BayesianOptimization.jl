@@ -105,9 +105,16 @@ function BOpt(
     now = time()
     acquisitionoptions =
         merge(defaultoptions(typeof(model), typeof(acquisition)), acquisitionoptions)
-    maxiterations < length(initializer) && @error(
+    maxiterations < length(initializer) && throw(ArgumentError(
         "maxiterations = $maxiterations < length(initializer) = $(length(initializer))"
-    )
+    ))
+
+    maxiterations >= 0 || throw(ArgumentError("maxiterations < 0"))
+    maxduration >= 0 || throw(ArgumentError("maxduration < 0"))
+    length(lowerbounds) == length(upperbounds) ||
+        throw(ArgumentError("length of lowerbounds does not match length of upperbounds"))
+    all(lowerbounds .<= upperbounds) || 
+        throw(ArgumentError("lowerbounds are not pointwise less than or eqal to upperbounds, they were possibly passed in the wrong order"))
 
     current_optimum = isempty(model.y) ? -Inf * Int(sense) : Int(sense) * maximum(model.y)
     current_optimizer =
@@ -264,11 +271,7 @@ function merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
 
     length(lowerbounds) == length(upperbounds) ||
         throw(ArgumentError("length of lowerbounds does not match length of upperbounds"))
-        
     inputdimension = length(lowerbounds)
-
-    all(lowerbounds .<= upperbounds) || 
-        throw(ArgumentError("lowerbounds are not pointwise less than or eqal to upperbounds, they were possibly passed in wrong order"))
 
     # TODO: come up with reasonable optdefaults
     # optdefaults can be extended to eventually overwrite default kwargs when passed to BOpt constructor
