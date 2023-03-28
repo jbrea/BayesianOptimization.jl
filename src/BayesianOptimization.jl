@@ -237,8 +237,8 @@ merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
 """
 function merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
     # the same order of args as in BOpt constructor
-    args_keys = [:model, :acquisition, :modeloptimizer]
-    kwargs_keys = [
+    args_keys = (:model, :acquisition, :modeloptimizer)
+    kwargs_keys = (
         :sense,
         :maxiterations,
         :maxduration,
@@ -247,7 +247,7 @@ function merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
         :verbosity,
         :initializer_iterations,
         :initializer,
-    ]
+    )
     # check if optkwargs contains only valid keyword arguments
     issubset(keys(optkwargs), union(args_keys, kwargs_keys)) ||
         throw(ArgumentError("use of unsupported keyword arguments"))
@@ -285,7 +285,7 @@ function merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
     # optkwargs overwrites and extends optdefaults
     params = merge(optdefaults, optkwargs)
     # split params into args and kwargs for BOpt constructor, args are in the right order for BOpt constructor
-    args = [f, [params[k] for k in args_keys]..., lowerbounds, upperbounds]
+    args = (f, [params[k] for k in args_keys]..., lowerbounds, upperbounds)
     kwargs = NamedTuple((k, v) for (k, v) in pairs(params) if k in kwargs_keys)
     args, kwargs
 end
