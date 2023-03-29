@@ -7,9 +7,6 @@ on:
 jobs:
   format:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        subset: [src/, test/]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Julia
@@ -25,7 +22,7 @@ jobs:
       - name: Install JuliaFormatter
         run: julia -e 'using Pkg; Pkg.add("JuliaFormatter")'
       - name: Format code
-        run: julia -e "using JuliaFormatter; format(\"$subset\")"
+        run: julia -e 'using JuliaFormatter; format(".")'
       - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
