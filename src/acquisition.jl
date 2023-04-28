@@ -1,8 +1,7 @@
-### acquisition optimization setup
 
-# TODO: does it really need to be Type here?
 defaultoptions(::Type{<:GPE}, ::Type{<:AbstractAcquisition}) =
     (method = :LD_LBFGS, restarts = 10, maxeval = 2000)
+
 defaultoptions(::Type{<:GPE}, ::Type{ThompsonSamplingSimple}) =
     (method = :GN_DIRECT_L, restarts = 1, maxeval = 2000)
 
@@ -13,6 +12,7 @@ function wrap_gradient(f)
         res.value
     end
 end
+
 wrap_dummygradient(f) = (x, g) -> f(x)
 
 function nlopt_setup(a::AbstractAcquisition, model, lowerbounds, upperbounds,
@@ -36,11 +36,9 @@ function nlopt_setup(a::AbstractAcquisition, model, lowerbounds, upperbounds,
 end
 
 
-### optimize acquisition function
-
 acquire_max(o) = acquire_max(o.acquisition, o.model, o.lowerbounds, o.upperbounds, o.acquisitionoptions)
+
 acquire_model_max(o; options = o.acquisitionoptions) = acquire_max(MaxMean(), o.model, o.lowerbounds, o.upperbounds, options)
-# TODO: stochastic acquisition like Gutmann and Corander (2016), p. 20
 function acquire_max(a::AbstractAcquisition, model, lowerbounds, upperbounds, options)
     opt = nlopt_setup(a, model, lowerbounds, upperbounds, options)
     acquire_max(opt, lowerbounds, upperbounds, options.restarts)
