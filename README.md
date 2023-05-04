@@ -9,6 +9,7 @@
 [![Build Status](https://travis-ci.com/jbrea/BayesianOptimization.jl.svg?branch=master)](https://travis-ci.com/jbrea/BayesianOptimization.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/jbrea/BayesianOptimization.jl?branch=master&svg=true)](https://ci.appveyor.com/project/jbrea/bayesianoptimization-jl)
 [![codecov.io](http://codecov.io/github/jbrea/BayesianOptimization.jl/coverage.svg?branch=master)](http://codecov.io/github/jbrea/BayesianOptimization.jl?branch=master)
+[![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
 ## Usage
 
@@ -93,6 +94,10 @@ This package exports
 * helper: `maxduration!`, `maxiterations!`
 
 Use the REPL help, e.g. `?Bopt`, to get more information.
+
+## Contributing
+
+* When contributing please make sure to follow the [SciML Code Style](https://github.com/SciML/SciMLStyle). To ensure this please run the [JuliaFormatter](https://juliapackages.com/p/juliaformatter).
 
 ## Review papers on Bayesian optimization
 
