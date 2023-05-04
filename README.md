@@ -97,7 +97,7 @@ Use the REPL help, e.g. `?Bopt`, to get more information.
 
 ## Contributing
 
-* When contributing please make sure to follow the [SciML Code Style]((https://github.com/SciML/SciMLStyle)). To ensure this please run the [JuliaFormatter](https://juliapackages.com/p/juliaformatter).
+* When contributing please make sure to follow the [SciML Code Style](https://github.com/SciML/SciMLStyle). To ensure this please run the [JuliaFormatter](https://juliapackages.com/p/juliaformatter).
 
 ## Review papers on Bayesian optimization
 
