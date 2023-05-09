@@ -238,16 +238,14 @@ end
 function merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
     # the same order of args as in BOpt constructor
     args_keys = (:model, :acquisition, :modeloptimizer)
-    kwargs_keys = (
-        :sense,
-        :maxiterations,
-        :maxduration,
-        :acquisitionoptions,
-        :repetitions,
-        :verbosity,
-        :initializer_iterations,
-        :initializer,
-    )
+    kwargs_keys = (:sense,
+                   :maxiterations,
+                   :maxduration,
+                   :acquisitionoptions,
+                   :repetitions,
+                   :verbosity,
+                   :initializer_iterations,
+                   :initializer)
     # check if optkwargs contains only valid keyword arguments
     issubset(keys(optkwargs), union(args_keys, kwargs_keys)) ||
         throw(ArgumentError("use of unsupported keyword arguments"))

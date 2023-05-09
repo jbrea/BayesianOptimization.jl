@@ -41,11 +41,12 @@ Sets the maximal duration per call of `boptimize!` to `duration`.
 """
 maxduration!(s::DurationCounter, d) = s.duration = d
 
-sample(lowerbounds, upperbounds) =
+function sample(lowerbounds, upperbounds)
     rand(length(lowerbounds)) .* (upperbounds .- lowerbounds) .+ lowerbounds
+end
 
-normal_pdf(μ, σ2) = 1/√(2π*σ2) * exp(-μ^2/(2*σ2))
-normal_cdf(μ, σ2) = 1/2 * (1 + erf(μ/√(2σ2)))
+normal_pdf(μ, σ2) = 1 / √(2π * σ2) * exp(-μ^2 / (2 * σ2))
+normal_cdf(μ, σ2) = 1 / 2 * (1 + erf(μ / √(2σ2)))
 
 struct ColumnIterator{T <: AbstractMatrix, Tit}
     data::T
@@ -60,7 +61,7 @@ end
 iterate(it::ColumnIterator) = dispatch(it, iterate(it.baseiterator))
 iterate(it::ColumnIterator, s) = dispatch(it, iterate(it.baseiterator, s))
 length(it::ColumnIterator) = length(it.baseiterator)
-struct ScaledSobolIterator{T,D}
+struct ScaledSobolIterator{T, D}
     lowerbounds::Vector{T}
     upperbounds::Vector{T}
     N::Int

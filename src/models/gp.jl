@@ -34,31 +34,34 @@ interval can be specified by setting the bounds of the form
 directly on the GP parameters, e.g.
 `using Distributions; set_priors!(mean, [Normal(0., 1.)])`
 """
-MAPGPOptimizer(; every = 10, kwargs...) = MAPGPOptimizer(0, every,
-                                                       merge(defaultoptions(MAPGPOptimizer),
-                                                             kwargs.data))
+function MAPGPOptimizer(; every = 10, kwargs...)
+    MAPGPOptimizer(0, every,
+                   merge(defaultoptions(MAPGPOptimizer),
+                         kwargs.data))
+end
 function optimizemodel!(o::MAPGPOptimizer, model::GPBase)
     if o.i % o.every == 0
         optimizemodel!(model, o.options)
     end
     o.i += 1
 end
-defaultoptions(::Type{MAPGPOptimizer}) =
+function defaultoptions(::Type{MAPGPOptimizer})
     (domean = true, kern = true, noise = true, lik = true, meanbounds = nothing,
      kernbounds = nothing, noisebounds = nothing, likbounds = nothing,
      method = :LD_LBFGS, maxeval = 500)
+end
 
 function optimizemodel!(gp::GPBase, options)
-    params_kwargs = GP.get_params_kwargs(gp; domean=options.domean,
-                                         kern=options.kern,
-                                         noise=options.noise,
-                                         lik=options.lik)
+    params_kwargs = GP.get_params_kwargs(gp; domean = options.domean,
+                                         kern = options.kern,
+                                         noise = options.noise,
+                                         lik = options.lik)
     f = (x, g) -> begin
-            GP.set_params!(gp, x; params_kwargs...)
-            GP.update_target_and_dtarget!(gp; params_kwargs...)
-            @. g = gp.dtarget
-            gp.target
-        end
+        GP.set_params!(gp, x; params_kwargs...)
+        GP.update_target_and_dtarget!(gp; params_kwargs...)
+        @. g = gp.dtarget
+        gp.target
+    end
     lb, ub = GP.bounds(gp, options.noisebounds, options.meanbounds,
                        options.kernbounds, options.likbounds;
                        domean = options.domean, kern = options.kern,

@@ -41,11 +41,11 @@ mutable struct ExpectedImprovement <: AbstractAcquisition
     τ::Float64
 end
 ExpectedImprovement(; τ = -Inf) = ExpectedImprovement(τ)
-function setparams!(a::Union{ExpectedImprovement,ProbabilityOfImprovement}, model)
+function setparams!(a::Union{ExpectedImprovement, ProbabilityOfImprovement}, model)
     a.τ = max(maxy(model), a.τ)
 end
 @inline function (a::ExpectedImprovement)(μ, σ²)
-    σ² == 0 && return μ > a.τ ? μ - a.τ : 0.
+    σ² == 0 && return μ > a.τ ? μ - a.τ : 0.0
     (μ - a.τ) * normal_cdf(μ - a.τ, σ²) + √σ² * normal_pdf(μ - a.τ, σ²)
 end
 
@@ -85,11 +85,13 @@ end
 """
     UpperConfidenceBound(; scaling = BrochuBetaScaling(.1), βt = 1)
 """
-UpperConfidenceBound(; scaling = BrochuBetaScaling(.1), βt = 1.) = UpperConfidenceBound(scaling, βt)
+function UpperConfidenceBound(; scaling = BrochuBetaScaling(0.1), βt = 1.0)
+    UpperConfidenceBound(scaling, βt)
+end
 function setparams!(a::UpperConfidenceBound{BrochuBetaScaling}, model)
     D, nobs = dims(model)
     nobs == 0 && (nobs = 1)
-    a.βt = sqrt(2*log(nobs^(D/2 + 2)*π^2/(3*a.scaling.δ)))
+    a.βt = sqrt(2 * log(nobs^(D / 2 + 2) * π^2 / (3 * a.scaling.δ)))
 end
 (a::UpperConfidenceBound)(μ, σ²) = μ + a.βt * √σ²
 
