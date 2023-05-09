@@ -15,8 +15,8 @@ isdone(s::IterationCounter) = s.c == s.N
 step!(s::IterationCounter) = (s.c += 1; s.i += 1)
 init!(s::IterationCounter) = s.c = 0
 """
-     maxiterations!(s::IterationCounter, N)
-     maxiterations!(o::BOpt, N)
+    maxiterations!(s::IterationCounter, N)
+    maxiterations!(o::BOpt, N)
 
 Sets the maximal number of iterations per call of `boptimize!` to `N`.
 """
@@ -34,8 +34,8 @@ function init!(s::DurationCounter)
 end
 isdone(s::DurationCounter) = (s.now = time()) >= s.endtime
 """
-     maxduration!(s::IterationCounter, duration)
-     maxduration!(o::BOpt, duration)
+    maxduration!(s::IterationCounter, duration)
+    maxduration!(o::BOpt, duration)
 
 Sets the maximal duration per call of `boptimize!` to `duration`.
 """
@@ -86,7 +86,7 @@ length(it::ScaledSobolIterator) = it.N
 end
 
 """
-     ScaledLHSIterator(lowerbounds, upperbounds, N)
+    ScaledLHSIterator(lowerbounds, upperbounds, N)
 
 Returns an iterator over `N` elements of a latin hyper cube sample between
 `lowerbounds` and `upperbounds`. See also `ScaledSobolIterator` for an iterator
