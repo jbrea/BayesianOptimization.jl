@@ -78,13 +78,13 @@ mutable struct BOpt{F, M, A, AO, MO, Ti}
     timeroutput::TimerOutput
 end
 """
-BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds;
-sense = Max, maxiterations = 10^4, maxduration = Inf,
-acquisitionoptions = NamedTuple(), repetitions = 1,
-verbosity = Progress,
-initializer_iterations = 5*length(lowerbounds),
-initializer = ScaledSobolIterator(lowerbounds, upperbounds,
-initializer_iterations))
+    BOpt(func, model, acquisition, modeloptimizer, lowerbounds, upperbounds;
+    sense = Max, maxiterations = 10^4, maxduration = Inf,
+    acquisitionoptions = NamedTuple(), repetitions = 1,
+    verbosity = Progress,
+    initializer_iterations = 5*length(lowerbounds),
+    initializer = ScaledSobolIterator(lowerbounds, upperbounds,
+    initializer_iterations))
 """
 function BOpt(func,
               model,
@@ -171,7 +171,7 @@ function initialise_model!(o)
                                                                                o.model)
 end
 """
-boptimize!(o::BOpt)
+    boptimize!(o::BOpt)
 """
 function boptimize!(o::BOpt)
     init!(o.duration)
@@ -215,7 +215,7 @@ function _evaluate_function(o, x)
     return y
 end
 """
-optimize(f, lowerbounds, upperbounds; <keyword arguments>)
+    optimize(f, lowerbounds, upperbounds; <keyword arguments>)
 
 Find an optimizer between `lowerbounds` and `upperbounds` of a function `f` using default parameters.
 
@@ -233,21 +233,19 @@ function optimize(f, lowerbounds, upperbounds; optkwargs...)
     boptimize!(opt)
 end
 """
-merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
+    merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
 """
 function merge_with_defaults(f, lowerbounds, upperbounds, optkwargs)
     # the same order of args as in BOpt constructor
     args_keys = (:model, :acquisition, :modeloptimizer)
-    kwargs_keys = (
-        :sense,
-        :maxiterations,
-        :maxduration,
-        :acquisitionoptions,
-        :repetitions,
-        :verbosity,
-        :initializer_iterations,
-        :initializer,
-    )
+    kwargs_keys = (:sense,
+                   :maxiterations,
+                   :maxduration,
+                   :acquisitionoptions,
+                   :repetitions,
+                   :verbosity,
+                   :initializer_iterations,
+                   :initializer)
     # check if optkwargs contains only valid keyword arguments
     issubset(keys(optkwargs), union(args_keys, kwargs_keys)) ||
         throw(ArgumentError("use of unsupported keyword arguments"))

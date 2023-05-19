@@ -1,14 +1,16 @@
 ### acquisition optimization setup
 
 # TODO: does it really need to be Type here?
-defaultoptions(::Type{<:GPE}, ::Type{<:AbstractAcquisition}) =
+function defaultoptions(::Type{<:GPE}, ::Type{<:AbstractAcquisition})
     (method = :LD_LBFGS, restarts = 10, maxeval = 2000)
-defaultoptions(::Type{<:GPE}, ::Type{ThompsonSamplingSimple}) =
+end
+function defaultoptions(::Type{<:GPE}, ::Type{ThompsonSamplingSimple})
     (method = :GN_DIRECT_L, restarts = 1, maxeval = 2000)
+end
 
 function wrap_gradient(f)
     (x, g) -> begin
-        res = DiffResults.DiffResult(0., g)
+        res = DiffResults.DiffResult(0.0, g)
         ForwardDiff.gradient!(res, f, x)
         res.value
     end
@@ -35,11 +37,14 @@ function nlopt_setup(a::AbstractAcquisition, model, lowerbounds, upperbounds,
     opt
 end
 
-
 ### optimize acquisition function
 
-acquire_max(o) = acquire_max(o.acquisition, o.model, o.lowerbounds, o.upperbounds, o.acquisitionoptions)
-acquire_model_max(o; options = o.acquisitionoptions) = acquire_max(MaxMean(), o.model, o.lowerbounds, o.upperbounds, options)
+function acquire_max(o)
+    acquire_max(o.acquisition, o.model, o.lowerbounds, o.upperbounds, o.acquisitionoptions)
+end
+function acquire_model_max(o; options = o.acquisitionoptions)
+    acquire_max(MaxMean(), o.model, o.lowerbounds, o.upperbounds, options)
+end
 # TODO: stochastic acquisition like Gutmann and Corander (2016), p. 20
 function acquire_max(a::AbstractAcquisition, model, lowerbounds, upperbounds, options)
     opt = nlopt_setup(a, model, lowerbounds, upperbounds, options)
@@ -52,7 +57,8 @@ function acquire_max(opt, lowerbounds, upperbounds, restarts)
     seq = ScaledLHSIterator(lowerbounds, upperbounds, restarts)
     for x0 in seq
         f, x, ret = NLopt.optimize(opt, x0)
-        ret == NLopt.FORCED_STOP && @warn("NLopt returned FORCED_STOP while optimizing the acquisition function.")
+        ret == NLopt.FORCED_STOP &&
+            @warn("NLopt returned FORCED_STOP while optimizing the acquisition function.")
         if f > maxf
             maxf = f
             maxx = x
