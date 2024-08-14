@@ -1,7 +1,7 @@
 using BayesianOptimization, GaussianProcesses, Random, Statistics
 
 # function and regret definitions
-branin(x::Vector; kwargs...) = branin(x[1], x[2]; kwargs...)
+branin(x::AbstractVector; kwargs...) = branin(x[1], x[2]; kwargs...)
 function branin(x1, x2; a = 1, b = 5.1 / (4π^2), c = 5 / π, r = 6, s = 10, t = 1 / (8π),
                 noiselevel = 0)
     a * (x2 - b * x1^2 + c * x1 - r)^2 + s * (1 - t) * cos(x1) + s + noiselevel * randn()
@@ -34,35 +34,84 @@ function regret(opt, func)
      model_regret = abs(Int(opt.sense) * opt.model_optimum - fmin))
 end
 
-# optimize noise-free branin
+###
+### optimize noise-free branin
+###
 
 opt = BOpt(x -> branin(x, noiselevel = 0),
-           ElasticGPE(2, mean = MeanConst(-10.0), kernel = SEArd([0.0, 0.0], 5.0),
+           ElasticGPE(2, mean = MeanZero(), kernel = Mat52Ard([0., 0.], 5.0),
                       logNoise = -2.0, capacity = 3000),
            ExpectedImprovement(),
-           MAPGPOptimizer(every = 50, noisebounds = [-4, 3],
-                          kernbounds = [[-1, -1, 0], [4, 4, 10]],
+           MAPGPOptimizer(every = 50, noisebounds = [-5, 3],
+                          kernbounds = [[-5, -5, -10], [10, 10, 10]],
                           maxeval = 40),
-           [-5.0, 0.0], [10.0, 15.0], maxiterations = 200,
+           [-5.0, 0.0], [10.0, 15.0], maxiterations = 50,
            sense = Min)
+# nlo = BayesianOptimization.nlopt_setup(ExpectedImprovement(), opt.model, [-5, 0], [10, 15], (method = :LD_LBFGS, restarts = 10, maxeval = 2000))
 @time boptimize!(opt)
 regret(opt, branin)
 
-# optimize hartman
+# new API
+
+using Optimization, AbstractGPs, OptimizationNLopt, OptimizationOptimJL
+import AbstractGPs: GP
+import BayesianOptimization: SurrogateAbstractGPs, BasicBO, QuasiMonteCarloMultiStarter
+
+prob = OptimizationProblem((x, p) -> branin(x, noiselevel = 0),
+                           [0., 0.], lb = [-5, 0], ub = [10, 15])
+surrogate = SurrogateAbstractGPs(gp = GP(ScaledKernel(Matern52Kernel() ∘ ScaleTransform(1.), 1.)))
+alg = BasicBO(; surrogate)
+@time sol = solve(prob, alg, maxiters = 50)
+
+regret((; observed_optimizer = surrogate.x[argmax(surrogate.y)],
+          observed_optimum = -maximum(surrogate.y),
+          model_optimizer = surrogate.x[argmax(surrogate.y)], # repeating because I'm lazy
+          model_optimum = -maximum(surrogate.y), # repeating because I'm lazy
+          sense = 1),
+       branin)
+
+###
+### optimize hartman
+###
 
 opt = BOpt(hartmann,
            ElasticGPE(6, mean = MeanConst(0.0), kernel = Mat52Ard(zeros(6), 0.0),
                       logNoise = -2.0, capacity = 3000),
            ExpectedImprovement(),
            MAPGPOptimizer(every = 20, noisebounds = [-4, 3],
-                          kernbounds = [[-3 * ones(6); -3], [4 * ones(6); 3]],
+                          ernbounds = [[-3 * ones(6); -3], [4 * ones(6); 3]],
                           maxeval = 100),
-           zeros(6), ones(6), maxiterations = 300,
+           zeros(6), ones(6), maxiterations = 120,
            sense = Min)
 @time boptimize!(opt)
 regret(opt, hartmann)
 
-# compare model and observation optimizer on noisy branin
+# new API
+
+# missing in EasyGPs:
+using EasyGPs
+EasyGPs.extract_parameters(t::ARDTransform) = EasyGPs.ParameterHandling.positive(t.v)
+EasyGPs.apply_parameters(::ARDTransform, θ) = ARDTransform(θ)
+EasyGPs._isequal(t1::ARDTransform, t2::ARDTransform) = isapprox(t1.v, t2.v)
+
+prob = OptimizationProblem((x, p) -> hartmann(x),
+                           zeros(6), lb = zeros(6), ub = ones(6))
+surrogate = SurrogateAbstractGPs(gp = GP(ScaledKernel(Matern52Kernel() ∘ ARDTransform(ones(6)), 1.)))
+alg = BasicBO(; surrogate,
+              acquisition_optimizer = QuasiMonteCarloMultiStarter(optimizer = (BayesianOptimization.NLoptFailSafe(NLopt.LD_LBFGS()), (; maxiters = 1000)))
+             )
+sol = solve(prob, alg, maxiters = 120)
+
+regret((; observed_optimizer = surrogate.x[argmax(surrogate.y)],
+          observed_optimum = -maximum(surrogate.y),
+          model_optimizer = surrogate.x[argmax(surrogate.y)], # repeating because I'm lazy
+          model_optimum = -maximum(surrogate.y), # repeating because I'm lazy
+          sense = 1),
+       hartmann)
+
+###
+### compare model and observation optimizer on noisy branin
+###
 
 all_obs_regs = []
 all_mod_regs = []

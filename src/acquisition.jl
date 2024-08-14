@@ -56,13 +56,22 @@ function acquire_max(opt, lowerbounds, upperbounds, restarts)
     maxx = lowerbounds
     seq = ScaledLHSIterator(lowerbounds, upperbounds, restarts)
     for x0 in seq
-        f, x, ret = NLopt.optimize(opt, x0)
-        ret == NLopt.FORCED_STOP &&
-            @warn("NLopt returned FORCED_STOP while optimizing the acquisition function.")
-        if f > maxf
-            maxf = f
-            maxx = x
+        try
+            f, x, ret = NLopt.optimize(opt, x0)
+            ret == NLopt.FORCED_STOP &&
+                @warn("NLopt returned FORCED_STOP while optimizing the acquisition function.")
+            if f > maxf
+                maxf = f
+                maxx = x
+            end
+        catch e
+            @warn e
         end
     end
     maxf, maxx
+end
+
+function acquire(acquisition_function, surrogate, u0, optimizer)
+    prob = OptimizationProblem(acquisition_function, u0, surrogate)
+    solve(prob, optimizer)
 end

@@ -1,4 +1,9 @@
-abstract type AbstractAcquisition end
+abstract type AbstractAcquisition <: Function end
+
+function (a::AbstractAcquisition)(u::AbstractArray, surrogate::AbstractStochasticSurrogate)
+    μ, σ² = first.(mean_and_var(finite_posterior(surrogate, [u])))
+    a(μ, σ²)
+end
 
 setparams!(a, model) = nothing
 function acquisitionfunction(a, model)
@@ -18,14 +23,14 @@ given by
 where `Φ` is the standard normal cumulative distribution function and `μ(x)`, `σ(x)`
 are mean and standard deviation of the distribution at point `x`.
 """
-mutable struct ProbabilityOfImprovement <: AbstractAcquisition
-    τ::Float64
-end
-@inline function (a::ProbabilityOfImprovement)(μ, σ²)
-    σ² == 0 && return float(μ > a.τ)
-    normal_cdf(μ - a.τ, σ²)
+mutable struct ProbabilityOfImprovement{T} <: AbstractAcquisition
+    τ::T
 end
 ProbabilityOfImprovement(; τ = -Inf) = ProbabilityOfImprovement(τ)
+function (a::ProbabilityOfImprovement{T})(μ::Real, σ²::Real) where T
+    σ² == 0 && return T(μ > a.τ)
+    normal_cdf(μ - a.τ, σ²)
+end
 
 """
 The expected improvement measures the expected improvement `x - τ` of a point `x`
@@ -37,14 +42,14 @@ where `ϕ` is the standard normal distribution function and `Φ` is the standard
 normal cumulative function, and `μ(x)`, `σ(x)` are mean and standard deviation
 of the distribution at point `x`.
 """
-mutable struct ExpectedImprovement <: AbstractAcquisition
-    τ::Float64
+mutable struct ExpectedImprovement{T} <: AbstractAcquisition
+    τ::T
 end
 ExpectedImprovement(; τ = -Inf) = ExpectedImprovement(τ)
-function setparams!(a::Union{ExpectedImprovement, ProbabilityOfImprovement}, model)
-    a.τ = max(maxy(model), a.τ)
+function setparams!(a::Union{ExpectedImprovement, ProbabilityOfImprovement}, surrogate)
+    a.τ = max(maxy(surrogate), a.τ)
 end
-@inline function (a::ExpectedImprovement)(μ, σ²)
+function (a::ExpectedImprovement)(μ::Real, σ²::Real)
     σ² == 0 && return μ > a.τ ? μ - a.τ : 0.0
     (μ - a.τ) * normal_cdf(μ - a.τ, σ²) + √σ² * normal_pdf(μ - a.τ, σ²)
 end
@@ -93,7 +98,7 @@ function setparams!(a::UpperConfidenceBound{BrochuBetaScaling}, model)
     nobs == 0 && (nobs = 1)
     a.βt = sqrt(2 * log(nobs^(D / 2 + 2) * π^2 / (3 * a.scaling.δ)))
 end
-(a::UpperConfidenceBound)(μ, σ²) = μ + a.βt * √σ²
+(a::UpperConfidenceBound)(μ::Real, σ²::Real) = μ + a.βt * √σ²
 
 """
 The acquisition function associated with `ThompsonSamplingSimple` draws
@@ -138,7 +143,7 @@ function setparams!(a::MutualInformation, model)
         a.γ̂ += σ2
     end
 end
-(a::MutualInformation)(μ, σ²) = μ + a.sqrtα * (sqrt(σ² + a.γ̂) - sqrt(a.γ̂))
+(a::MutualInformation)(μ::Real, σ²::Real) = μ + a.sqrtα * (sqrt(σ² + a.γ̂) - sqrt(a.γ̂))
 
 # TODO see
 # https://github.com/HildoBijl/GPRT/blob/7166548b8587201fabc671a0647aac2ff96f3555/Chapter6/Chapter6.m#L723
