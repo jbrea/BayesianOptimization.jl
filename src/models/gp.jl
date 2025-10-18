@@ -37,7 +37,7 @@ directly on the GP parameters, e.g.
 function MAPGPOptimizer(; every = 10, kwargs...)
     MAPGPOptimizer(0, every,
                    merge(defaultoptions(MAPGPOptimizer),
-                         kwargs.data))
+                         kwargs)) #Changed kwargs.data -> kwargs
 end
 function optimizemodel!(o::MAPGPOptimizer, model::GPBase)
     if o.i % o.every == 0
